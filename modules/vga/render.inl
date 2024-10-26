@@ -87,8 +87,8 @@ static bool snapshot(struct vxt_peripheral *p) {
 
     memcpy(v->snap.mem, v->mem, MEMORY_SIZE);
     memcpy(v->snap.palette, v->palette, sizeof(v->snap.palette));
-    memcpy(v->snap.pal_reg, v->reg.attr_reg, 16);
 
+    memcpy(v->snap.pal_reg, v->reg.attr_reg, 16);
     v->snap.width = v->width;
     v->snap.height = v->height;
     v->snap.bpp = v->bpp;
@@ -103,7 +103,7 @@ static bool snapshot(struct vxt_peripheral *p) {
     v->snap.font_b = font_offsets[fb];
 
     v->snap.video_page = ((int)v->reg.crt_reg[0xC] << 8) + (int)v->reg.crt_reg[0xD];
-    v->snap.plane_mode = !(v->reg.seq_reg[0x4] & 6);
+    v->snap.plane_mode = !(v->reg.seq_reg[0x4] & 8);
     v->snap.mode_ctrl = v->reg.attr_reg[0x10];
     v->snap.pixel_shift = v->reg.attr_reg[0x13] & 15;
     v->snap.color_select = v->reg.attr_reg[0x14];
@@ -202,19 +202,19 @@ static int render(struct vxt_peripheral *p, int (*f)(int,int,const vxt_byte*,voi
     }
 
     if (snap->bpp == 8) {
-        for (int y = 0; y < 200; y++) {
-            for (int x = 0; x < 320; x++) {
+        for (int y = 0; y < snap->height; y++) {
+            for (int x = 0; x < snap->width; x++) {
                 int addr;
                 if (snap->plane_mode) {
-                    addr = (y * 320 + x) / 4 + (x & 3) * PLANE_SIZE;
-                    addr = addr + snap->video_page - snap->pixel_shift;
+                    addr = (y * snap->width + x) / 4 + (x & 3) * PLANE_SIZE;
+                    addr = (addr + snap->video_page) - snap->pixel_shift;
                 } else {
-                    addr = (snap->video_page + y * 320 + x) & 0xFFFF;
+					addr = snap->video_page + y * 320 + x;
                 }
                 blit32(snap->rgba_surface, (y * 320 + x) * 4, snap->palette[MEMORY(snap->mem, addr)]);
             }
         }
-        return f(320, 200, snap->rgba_surface, userdata);
+        return f(snap->width, snap->height, snap->rgba_surface, userdata);
     }
 
     if (snap->bpp == 0) // Assume uninitialized. Render junk.

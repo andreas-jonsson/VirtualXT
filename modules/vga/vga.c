@@ -197,17 +197,15 @@ static void update_video_mode(struct vga_video *v) {
     interval_us = (freq_div > 0) ? (unsigned int)(500000.0 / (pixel_clock / (double)freq_div)) : 0;
     vxt_system_set_timer_interval(VXT_GET_SYSTEM(v), v->scanline_timer, interval_us);
 
-	//VXT_LOG("Video Mode: %dx%d %dbpp @ %.02fHz%s", v->width, v->height, v->bpp, pixel_clock / (double)(htotal * vtotal * (int)dots), v->textmode ? " (textmode)" : "");
+	//VXT_LOG("Video Mode: %dx%d %dbpp %s@ %.02fHz%s",
+	//	v->width, v->height, v->bpp, (v->reg.seq_reg[4] & 8) ? "CHAINED " : "", pixel_clock / (double)(htotal * vtotal * (int)dots), v->textmode ? " (textmode)" : "");
 }
 
 static vxt_byte read(struct vga_video *v, vxt_pointer addr) {
     addr -= MEMORY_START;
     vxt_system_wait(VXT_GET_SYSTEM(v), VGA_WAITSTATES);
 
-	if (v->textmode || (v->bpp != 4))
-        return MEMORY(v->mem, addr);
-
-    if (v->reg.seq_reg[4] & 8)
+    if (v->textmode || (v->reg.seq_reg[4] & 8))
         return MEMORY(v->mem, addr);
 
     v->mem_latch[0] = MEMORY(v->mem, addr);
@@ -235,12 +233,7 @@ static void write(struct vga_video *v, vxt_pointer addr, vxt_byte data) {
     v->is_dirty = true;
     vxt_system_wait(VXT_GET_SYSTEM(v), VGA_WAITSTATES);
 
-	if (v->textmode || (v->bpp != 4)) {
-        MEMORY(v->mem, addr) = data;
-        return;
-    }
-
-	if (v->reg.seq_reg[4] & 8) {
+	if (v->textmode || (v->reg.seq_reg[4] & 8)) {
         MEMORY(v->mem, addr) = data;
         return;
     }
