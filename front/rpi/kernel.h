@@ -1,0 +1,85 @@
+// Copyright (c) 2019-2024 Andreas T Jonsson <mail@andreasjonsson.se>
+//
+// This software is provided 'as-is', without any express or implied
+// warranty. In no event will the authors be held liable for any damages
+// arising from the use of this software.
+//
+// Permission is granted to anyone to use this software for any purpose,
+// including commercial applications, and to alter it and redistribute it
+// freely, subject to the following restrictions:
+//
+// 1. The origin of this software must not be misrepresented; you must not
+//    claim that you wrote the original software. If you use this software
+//    in a product, an acknowledgment in the product documentation would be
+//    appreciated but is not required.
+//
+// 2. Altered source versions must be plainly marked as such, and must not be
+//    misrepresented as being the original software.
+//
+// 3. This notice may not be removed or altered from any source
+//    distribution.
+
+#ifndef _KERNEL_H_
+#define _KERNEL_H_
+
+#include <circle/actled.h>
+#include <circle/koptions.h>
+#include <circle/devicenameservice.h>
+#include <circle/screen.h>
+#include <circle/serial.h>
+#include <circle/exceptionhandler.h>
+#include <circle/interrupt.h>
+#include <circle/timer.h>
+#include <circle/logger.h>
+#include <circle/usb/usbhcidevice.h>
+#include <circle/usb/usbkeyboard.h>
+#include <circle/types.h>
+
+#define __STDC_VERSION__ 201112L // Why do I need this?
+#define _Static_assert static_assert
+#define bool bool
+#include <vxt/vxt.h>
+
+enum TShutdownMode {
+	ShutdownNone,
+	ShutdownHalt,
+	ShutdownReboot
+};
+
+class CKernel {
+public:
+	CKernel(void);
+	~CKernel(void);
+
+	boolean Initialize(void);
+
+	TShutdownMode Run(void);
+
+private:
+	static void KeyPressedHandler(const char *pString);
+	static void ShutdownHandler(void);
+
+	static void KeyStatusHandlerRaw(unsigned char ucModifiers, const unsigned char RawKeys[6]);
+
+	static void KeyboardRemovedHandler(CDevice *pDevice, void *pContext);
+
+private:
+	// Do not change this order!
+	CKernelOptions		m_Options;
+	CDeviceNameService	m_DeviceNameService;
+	CScreenDevice		m_Screen;
+	CSerialDevice		m_Serial;
+	CExceptionHandler	m_ExceptionHandler;
+	CInterruptSystem	m_Interrupt;
+	CTimer				m_Timer;
+	CLogger				m_Logger;
+	CUSBHCIDevice		m_USBHCI;
+
+	CUSBKeyboardDevice *volatile m_pKeyboard;
+
+	volatile TShutdownMode m_ShutdownMode;
+
+	static CKernel *s_pThis;
+};
+
+#endif
