@@ -38,7 +38,11 @@
 #define __STDC_VERSION__ 201112L // Why do I need this?
 #define _Static_assert static_assert
 #define bool bool
+
 #include <vxt/vxt.h>
+
+#undef NULL
+#define NULL nullptr
 
 enum TShutdownMode {
 	ShutdownNone,
@@ -56,12 +60,10 @@ public:
 	TShutdownMode Run(void);
 
 private:
-	static void KeyPressedHandler(const char *pString);
-	static void ShutdownHandler(void);
-
 	static void KeyStatusHandlerRaw(unsigned char ucModifiers, const unsigned char RawKeys[6]);
-
 	static void KeyboardRemovedHandler(CDevice *pDevice, void *pContext);
+
+	static void TimerHandler(TKernelTimerHandle hTimer, void *pParam, void *pContext);
 
 private:
 	// Do not change this order!
@@ -78,6 +80,7 @@ private:
 	CUSBKeyboardDevice *volatile m_pKeyboard;
 
 	volatile TShutdownMode m_ShutdownMode;
+	volatile boolean m_timerUpdated;
 
 	static CKernel *s_pThis;
 };

@@ -1,5 +1,12 @@
 __pycache__
 
+*.o
+*.d
+/front/rpi/*.img
+/front/rpi/*.lst
+/front/rpi/*.map
+/front/rpi/*.elf
+
 /obj
 /bin
 /.vscode
