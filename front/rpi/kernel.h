@@ -34,6 +34,8 @@
 #include <circle/usb/usbhcidevice.h>
 #include <circle/usb/usbkeyboard.h>
 #include <circle/types.h>
+#include <fatfs/ff.h>
+#include <SDCard/emmc.h>
 
 #define __STDC_VERSION__ 201112L // Why do I need this?
 #define _Static_assert static_assert
@@ -63,9 +65,6 @@ private:
 	static void KeyStatusHandlerRaw(unsigned char ucModifiers, const unsigned char RawKeys[6]);
 	static void KeyboardRemovedHandler(CDevice *pDevice, void *pContext);
 
-	static void TimerHandler(TKernelTimerHandle hTimer, void *pParam, void *pContext);
-
-private:
 	// Do not change this order!
 	CKernelOptions		m_Options;
 	CDeviceNameService	m_DeviceNameService;
@@ -76,11 +75,15 @@ private:
 	CTimer				m_Timer;
 	CLogger				m_Logger;
 	CUSBHCIDevice		m_USBHCI;
+	CEMMCDevice			m_EMMC;
 
 	CUSBKeyboardDevice *volatile m_pKeyboard;
-
 	volatile TShutdownMode m_ShutdownMode;
-	volatile boolean m_timerUpdated;
+
+	FATFS m_FileSystem;
+
+	unsigned char m_Modifiers;
+	unsigned char m_RawKeys[6];
 
 	static CKernel *s_pThis;
 };

@@ -3,7 +3,7 @@ ifeq ($(CIRCLEHOME),)
 CIRCLEHOME = ../../../circle
 endif
 
-FLAGS_VXT = -DVXT_NO_LIBC -DFRONTEND_VIDEO_RED=2 -DFRONTEND_VIDEO_GREEN=1 -DFRONTEND_VIDEO_BLUE=0 -DFRONTEND_VIDEO_ALPHA=3 -I$(VXTHOME)/include -I../common
+FLAGS_VXT = -DVXT_NO_LIBC -I$(VXTHOME)/include -I../common
 
 CFLAGS := $(FLAGS_VXT)
 CPPFLAGS := -fpermissive $(FLAGS_VXT)
@@ -24,7 +24,9 @@ OBJS = main.o kernel.o cga.o $(OBJS_VXT)
 LIBS = $(CIRCLEHOME)/lib/usb/libusb.a \
 	$(CIRCLEHOME)/lib/input/libinput.a \
 	$(CIRCLEHOME)/lib/fs/libfs.a \
-	$(CIRCLEHOME)/lib/libcircle.a
+	$(CIRCLEHOME)/lib/libcircle.a \
+	$(CIRCLEHOME)/addon/fatfs/libfatfs.a \
+	$(CIRCLEHOME)/addon/SDCard/libsdcard.a
 
 include $(CIRCLEHOME)/Rules.mk
 

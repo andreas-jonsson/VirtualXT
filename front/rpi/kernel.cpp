@@ -19,7 +19,7 @@
 // 3. This notice may not be removed or altered from any source
 //    distribution.
 
-#define LOGGING 1
+#define LOGGING 0
 
 #include "kernel.h"
 #include <circle/string.h>
@@ -28,12 +28,18 @@
 #include <assert.h>
 
 #include <vxt/vxtu.h>
+#include "keymap.h"
 
+struct vxt_peripheral *ppi = 0;
 CKernel *CKernel::s_pThis = 0;
 
+#define DRIVE "SD:"
+#define DISKIMAGE "virtualxt.img"
+#define NEWIMAGESIZE_MB 40
+#define BIOSIMAGE "GLABIOS.ROM"
+#define CPU_FREQUENCY VXT_DEFAULT_FREQUENCY
+
 extern "C" {
-	#include "../../bios/glabios.h"
-	#include "../../bios/vxtx.h"
 	#include "../../modules/cga/cga.h"
 
 	// From joystick.c
@@ -82,13 +88,76 @@ extern "C" {
 		return 0; // Not correct but it will have to do for now.
 	}
 
-	static struct vxt_peripheral *load_bios(const vxt_byte *data, int size, vxt_pointer base) {
-		struct vxt_peripheral *rom = vxtu_memory_create(&allocator, base, size, true);
-		if (!vxtu_memory_device_fill(rom, data, size)) {
-			VXT_LOG("vxtu_memory_device_fill() failed!");
+	static int tell_file(vxt_system *s, void *fp) {
+		(void)s;
+		return (int)f_tell((FIL*)fp);
+	}
+
+	static int read_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
+		(void)s;
+		UINT out = 0;
+		if (f_read((FIL*)fp, buffer, (UINT)size, &out) != FR_OK)
+			return -1;
+		return (int)out;
+	}
+
+	static int write_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
+		(void)s;
+		UINT out = 0;
+		if (f_write((FIL*)fp, buffer, (UINT)size, &out) != FR_OK)
+			return -1;
+		f_sync((FIL*)fp);
+		return (int)out;
+	}
+
+	static int seek_file(vxt_system *s, void *fp, int offset, enum vxtu_disk_seek whence) {
+		(void)s;
+
+		int disk_head = tell_file(s, fp);
+		int disk_sz = (int)f_size((FIL*)fp);
+		int pos = -1;
+
+		switch (whence) {
+			case VXTU_SEEK_START:
+				if ((pos = offset) > disk_sz)
+					return -1;
+				break;
+			case VXTU_SEEK_CURRENT:
+				pos = disk_head + offset;
+				if ((pos < 0) || (pos > disk_sz))
+					return -1;
+				break;
+			case VXTU_SEEK_END:
+				pos = disk_sz - offset;
+				if ((pos < 0) || (pos > disk_sz))
+					return -1;
+				break;
+			default:
+				VXT_LOG("Invalid seek!");
+				return -1;
+		}
+		
+		return (f_lseek((FIL*)fp, (FSIZE_t)pos) == FR_OK) ? 0 : -1;
+	}
+
+	static struct vxt_peripheral *load_bios(const char *filename, vxt_pointer base) {
+		FIL file;
+		if (f_open(&file, filename, FA_READ|FA_OPEN_EXISTING) != FR_OK) {
+			VXT_LOG("Could not open BIOS image: %s", filename);
 			return NULL;
 		}
-		VXT_LOG("Loaded BIOS @ 0x%X-0x%X", base, base + size - 1);
+
+		UINT sz = f_size(&file);
+		struct vxt_peripheral *rom = vxtu_memory_create(&allocator, base, (int)sz, true);
+		
+		if (f_read(&file, vxtu_memory_internal_pointer(rom), sz, NULL) != FR_OK) {
+			VXT_LOG("Could not read BIOS image: %s", filename);
+			f_close(&file);
+			return NULL;
+		}
+
+		VXT_LOG("Loaded BIOS @ 0x%X-0x%X", base, base + sz - 1);
+		f_close(&file);
 		return rom;
 	}
 	
@@ -97,11 +166,11 @@ extern "C" {
 		for (int y = 0; y < height; y++) {
 			for (int x = 0; x < width; x++) {
 				#ifdef COLOR32
-					#define COLOR COLOR32
+					#define COLOR(r, g, b) COLOR32(r, g, b, 0xFF)
 				#else
-					#define COLOR COLOR16
+					#define COLOR(r, g, b) COLOR16(r >> 3, g >> 3, b >> 3)
 				#endif
-				screen->SetPixel(x, y, COLOR(rgba[0], rgba[1], rgba[2], rgba[3]));
+				screen->SetPixel(x, y, COLOR(rgba[3], rgba[2], rgba[1]));
 				rgba += 4;
 			}
 		}
@@ -114,10 +183,12 @@ CKernel::CKernel(void)
 	m_Timer(&m_Interrupt),
 	m_Logger(m_Options.GetLogLevel()),
 	m_USBHCI(&m_Interrupt, &m_Timer, TRUE),
+	m_EMMC(&m_Interrupt, &m_Timer, NULL),
 	m_pKeyboard(0),
 	m_ShutdownMode(ShutdownNone)
 {
-	m_timerUpdated = true;
+	memset(m_RawKeys, 0, sizeof(m_RawKeys));
+	m_Modifiers = 0;
 	s_pThis = this;
 }
 
@@ -150,12 +221,14 @@ boolean CKernel::Initialize(void) {
 
 	if (bOK)
 		bOK = m_USBHCI.Initialize();
+
+	if (bOK)
+		bOK = m_EMMC.Initialize();
 	return bOK;
 }
 
 TShutdownMode CKernel::Run(void) {
-	//struct vxt_peripheral *disk = NULL;
-	struct vxt_peripheral *ppi = NULL;
+	struct vxt_peripheral *disk = NULL;
 	struct vxt_peripheral *cga = NULL;
 	//struct vxt_peripheral *mouse = NULL;
 	//struct vxt_peripheral *joystick = NULL;
@@ -169,32 +242,64 @@ TShutdownMode CKernel::Run(void) {
 		VXT_LOG("Screen color depth: %dbit", sizeof(TScreenColor) * 8);
 	}
 
-	//struct vxtu_disk_interface intrf = {
-	//	&read_file, &write_file, &seek_file, &tell_file
-	//};
+	FRESULT res = f_mount(&m_FileSystem, DRIVE, 1);
+	if (res != FR_OK) {
+		VXT_PRINT("Cannot mout filesystem: ");
+		switch (res) {
+			case FR_INVALID_DRIVE: VXT_PRINT("FR_INVALID_DRIVE\n"); break;
+			case FR_DISK_ERR: VXT_PRINT("FR_DISK_ERR\n"); break;	
+			case FR_NOT_READY: VXT_PRINT("FR_NOT_READY\n"); break;
+			case FR_NOT_ENABLED: VXT_PRINT("FR_NOT_ENABLED\n"); break;
+			case FR_NO_FILESYSTEM: VXT_PRINT("FR_NO_FILESYSTEM\n"); break;
+			default: VXT_PRINT("UNKNOWN ERROR\n");
+		}
+	}
+
+	FIL file;
+	open_disk: if (f_open(&file, DRIVE DISKIMAGE, FA_READ|FA_WRITE|FA_OPEN_EXISTING) != FR_OK) {
+		VXT_LOG("Cannot open file: %s", DISKIMAGE);
+		VXT_LOG("Creating one now...");
+
+		if (f_open(&file, DRIVE DISKIMAGE, FA_WRITE|FA_CREATE_NEW) == FR_OK) {
+			static const char buffer[512] = {0};
+			UINT tmp;
+			for (int i = 0; i < 2000 * NEWIMAGESIZE_MB; i++)
+				f_write(&file, buffer, sizeof(buffer), &tmp);
+			f_close(&file);
+			VXT_LOG("Done!");
+			goto open_disk;
+		} else {
+			VXT_LOG("Error! Can't create disk image: %s", DISKIMAGE);
+			return (m_ShutdownMode = ShutdownHalt);
+		}
+	}
+	
+	struct vxtu_disk_interface intrf = {
+		&read_file, &write_file, &seek_file, &tell_file
+	};
 
 	struct vxt_peripheral *devices[] = {
 		vxtu_memory_create(&allocator, 0x0, 0x100000, false),
-		load_bios(glabios_bin, (int)glabios_bin_len, 0xFE000),
-		load_bios(vxtx_bin, (int)vxtx_bin_len, 0xE0000),
+		load_bios(DRIVE BIOSIMAGE, 0xFE000),
+		load_bios(DRIVE "vxtx.bin", 0xE0000),
 		vxtu_uart_create(&allocator, 0x3F8, 4),
 		vxtu_pic_create(&allocator),
 		vxtu_dma_create(&allocator),
 		vxtu_pit_create(&allocator),
 		(ppi = vxtu_ppi_create(&allocator)),
 		(cga = cga_create(&allocator)),
-		//(disk = vxtu_disk_create(&allocator, &intrf)),
+		(disk = vxtu_disk_create(&allocator, &intrf)),
 		//(mouse = mouse_create(&allocator, NULL, "0x3F8")),
 		//(joystick = joystick_create(&allocator, NULL, "0x201")),
 		NULL
 	};
 
-	vxt_system *s = vxt_system_create(&allocator, VXT_DEFAULT_FREQUENCY, devices);
+	vxt_system *s = vxt_system_create(&allocator, CPU_FREQUENCY, devices);
 	if (!s) {
 		VXT_LOG("Could not create system!");
 		return (m_ShutdownMode = ShutdownHalt);
 	}
-
+	
 	vxt_error err = vxt_system_initialize(s);
 	if (err != VXT_NO_ERROR) {
 		VXT_LOG("Could not initialize system: %s", vxt_error_str(err));
@@ -208,21 +313,27 @@ TShutdownMode CKernel::Run(void) {
 			VXT_LOG("%d - %s", i, vxt_peripheral_name(device));
 	}
 
+	vxtu_disk_mount(disk, 128, &file);
+	vxtu_disk_set_boot_drive(disk, 128);
+
 	VXT_LOG("CPU reset!");
 	vxt_system_reset(s);
 
-	VXT_LOG("Start kernel timer");
-	m_Timer.StartKernelTimer(60 * HZ, TimerHandler);
+	assert(CLOCKHZ == 1000000);
+	u64 renderTicks = CTimer::GetClockTicks64();
+	u64 cpuTicks = renderTicks;
 	
 	for (unsigned nCount = 0; m_ShutdownMode == ShutdownNone;) {
-		if (m_timerUpdated) {
-			m_timerUpdated = FALSE;
+		u64 ticks = CTimer::GetClockTicks64();
+		if ((ticks - renderTicks) >= (CLOCKHZ / 60)) {
+			renderTicks = ticks;
 			
 			if (m_USBHCI.UpdatePlugAndPlay() && !m_pKeyboard) {
 				m_pKeyboard = (CUSBKeyboardDevice*)m_DeviceNameService.GetDevice("ukbd1", FALSE);
 				if (m_pKeyboard) {
 					m_pKeyboard->RegisterRemovedHandler(KeyboardRemovedHandler);
 					m_pKeyboard->RegisterKeyStatusHandlerRaw(KeyStatusHandlerRaw);
+					VXT_LOG("Keyboard connected!");
 				}
 			}
 
@@ -233,46 +344,83 @@ TShutdownMode CKernel::Run(void) {
 	    	cga_render(cga, &render_callback, &m_Screen);
 
 			m_Screen.Rotor(0, nCount++);
-			//m_Timer.MsDelay(100);
 		}
 
-		struct vxt_step step = vxt_system_step(s, 1);
-		if (step.err != VXT_NO_ERROR)
-			VXT_LOG(vxt_error_str(step.err));
-
+		u64 dtics = ticks - cpuTicks;
+		if (dtics) {
+			struct vxt_step step = vxt_system_step(s, (dtics * CPU_FREQUENCY) / 1000000);
+			if (step.err != VXT_NO_ERROR)
+				VXT_LOG(vxt_error_str(step.err));
+			cpuTicks = ticks;
+		}
 	}
 
 	vxt_system_destroy(s);
+	f_unmount(DRIVE);
+	
 	return m_ShutdownMode;
 }
 
 void CKernel::KeyStatusHandlerRaw(unsigned char ucModifiers, const unsigned char RawKeys[6]) {
 	assert(s_pThis);
+	assert(ppi);
 
-	CString Message;
-	Message.Format ("Key status (modifiers %02X)", (unsigned) ucModifiers);
+	for(int i = 0; i < NUM_MODIFIERS; i++) {
+		const int mask = 1 << i;
+		bool was_pressed = (s_pThis->m_Modifiers & mask) != 0;
+		bool is_pressed = (ucModifiers & mask) != 0;
 
-	for (unsigned i = 0; i < 6; i++)
-	{
-		if (RawKeys[i] != 0)
-		{
-			CString KeyCode;
-			KeyCode.Format (" %02X", (unsigned) RawKeys[i]);
+		enum vxtu_scancode scan = VXTU_SCAN_INVALID;
+		if (!was_pressed && is_pressed) {
+			scan = modifierToXT[i];
+		} else if (was_pressed && !is_pressed) {
+			scan = modifierToXT[i];
+			if (scan != VXTU_SCAN_INVALID)
+				scan |= VXTU_KEY_UP_MASK;
+		}
 
-			Message.Append (KeyCode);
+		if (scan != VXTU_SCAN_INVALID)
+			vxtu_ppi_key_event(ppi, scan, false);
+	}
+
+	for (int i = 0; i < 6; i++) {
+		if (s_pThis->m_RawKeys[i]) {
+			bool found = false;
+			for (int j = 0; j < 6; j++) {
+				if (s_pThis->m_RawKeys[i] == RawKeys[j]) {
+					found = true;
+					break;
+				}
+			}
+
+			enum vxtu_scancode scan = usbToXT[RawKeys[i]];
+			if (!found && scan != VXTU_SCAN_INVALID)
+				vxtu_ppi_key_event(ppi, scan | VXTU_KEY_UP_MASK, false);
 		}
 	}
 
-	//s_pThis->m_Logger.Write ("kernel", LogNotice, Message);
+	for (int i = 0; i < 6; i++) {
+		if (RawKeys[i]) {
+			bool found = false;
+			for (int j = 0; j < 6; j++) {
+				if (RawKeys[i] == s_pThis->m_RawKeys[j]) {
+					found = true;
+					break;
+				}
+			}
+
+			enum vxtu_scancode scan = usbToXT[RawKeys[i]];
+			if (!found && scan != VXTU_SCAN_INVALID)
+				vxtu_ppi_key_event(ppi, scan, false);
+		}
+	}
+
+	s_pThis->m_Modifiers = ucModifiers;
+	memcpy(s_pThis->m_RawKeys, RawKeys, sizeof(s_pThis->m_RawKeys)); 
 }
 
 void CKernel::KeyboardRemovedHandler(CDevice *pDevice, void *pContext) {
 	assert(s_pThis);
-	//CLogger::Get()->Write("kernel", LogDebug, "Keyboard removed");
+	VXT_LOG("Keyboard removed!");
 	s_pThis->m_pKeyboard = 0;
-}
-
-void CKernel::TimerHandler(TKernelTimerHandle hTimer, void *pParam, void *pContext) {
-	assert(s_pThis);
-	s_pThis->m_timerUpdated = TRUE;
 }
