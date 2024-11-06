@@ -25,6 +25,7 @@
 #include <circle/actled.h>
 #include <circle/koptions.h>
 #include <circle/devicenameservice.h>
+#include <circle/bcmframebuffer.h>
 #include <circle/screen.h>
 #include <circle/serial.h>
 #include <circle/exceptionhandler.h>
@@ -34,7 +35,6 @@
 #include <circle/usb/usbhcidevice.h>
 #include <circle/usb/usbkeyboard.h>
 #include <circle/types.h>
-#include <fatfs/ff.h>
 #include <SDCard/emmc.h>
 
 #define __STDC_VERSION__ 201112L // Why do I need this?
@@ -68,7 +68,7 @@ private:
 	// Do not change this order!
 	CKernelOptions		m_Options;
 	CDeviceNameService	m_DeviceNameService;
-	CScreenDevice		m_Screen;
+	CCPUThrottle 		m_CPUThrottle;
 	CSerialDevice		m_Serial;
 	CExceptionHandler	m_ExceptionHandler;
 	CInterruptSystem	m_Interrupt;
@@ -80,7 +80,7 @@ private:
 	CUSBKeyboardDevice *volatile m_pKeyboard;
 	volatile TShutdownMode m_ShutdownMode;
 
-	FATFS m_FileSystem;
+	CBcmFrameBuffer	*m_pFrameBuffer;
 
 	unsigned char m_Modifiers;
 	unsigned char m_RawKeys[6];

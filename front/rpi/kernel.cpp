@@ -25,17 +25,24 @@
 #include <circle/string.h>
 #include <circle/util.h>
 #include <circle/new.h>
+#include <fatfs/ff.h>
 #include <assert.h>
 
 #include <vxt/vxtu.h>
 #include "keymap.h"
 
+int screen_width = 640;
+int screen_height = 480;
 struct vxt_peripheral *ppi = 0;
+
 CKernel *CKernel::s_pThis = 0;
+CDevice *pUMSD1 = 0;
+int pUMSD1_head = 0;
 
 #define DRIVE "SD:"
 #define DISKIMAGE "virtualxt.img"
 #define NEWIMAGESIZE_MB 40
+#define MAX_DISKSIZE_MB 1024*1024*256
 #define BIOSIMAGE "GLABIOS.ROM"
 #define CPU_FREQUENCY VXT_DEFAULT_FREQUENCY
 
@@ -90,11 +97,18 @@ extern "C" {
 
 	static int tell_file(vxt_system *s, void *fp) {
 		(void)s;
+		if (fp == pUMSD1)
+			return pUMSD1_head;
 		return (int)f_tell((FIL*)fp);
 	}
 
 	static int read_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
 		(void)s;
+		if (fp == pUMSD1) {
+			pUMSD1_head += size;
+			return (int)pUMSD1->Read(buffer, size);
+		}
+		
 		UINT out = 0;
 		if (f_read((FIL*)fp, buffer, (UINT)size, &out) != FR_OK)
 			return -1;
@@ -103,9 +117,15 @@ extern "C" {
 
 	static int write_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
 		(void)s;
+		if (fp == pUMSD1) {
+			pUMSD1_head += size;
+			return (int)pUMSD1->Write(buffer, size);
+		}
+		
 		UINT out = 0;
 		if (f_write((FIL*)fp, buffer, (UINT)size, &out) != FR_OK)
 			return -1;
+			
 		f_sync((FIL*)fp);
 		return (int)out;
 	}
@@ -114,8 +134,11 @@ extern "C" {
 		(void)s;
 
 		int disk_head = tell_file(s, fp);
-		int disk_sz = (int)f_size((FIL*)fp);
+		int disk_sz = (fp == pUMSD1) ? (int)pUMSD1->GetSize() : (int)f_size((FIL*)fp);
 		int pos = -1;
+
+		if (disk_sz > MAX_DISKSIZE_MB)
+			disk_sz = MAX_DISKSIZE_MB;
 
 		switch (whence) {
 			case VXTU_SEEK_START:
@@ -136,7 +159,9 @@ extern "C" {
 				VXT_LOG("Invalid seek!");
 				return -1;
 		}
-		
+
+		if (fp == pUMSD1)
+			return (int)pUMSD1->Seek((pUMSD1_head = pos));
 		return (f_lseek((FIL*)fp, (FSIZE_t)pos) == FR_OK) ? 0 : -1;
 	}
 
@@ -162,55 +187,68 @@ extern "C" {
 	}
 	
 	static int render_callback(int width, int height, const vxt_byte *rgba, void *userdata) {
-		CScreenDevice *screen = (CScreenDevice*)userdata;
-		for (int y = 0; y < height; y++) {
-			for (int x = 0; x < width; x++) {
-				#ifdef COLOR32
-					#define COLOR(r, g, b) COLOR32(r, g, b, 0xFF)
-				#else
-					#define COLOR(r, g, b) COLOR16(r >> 3, g >> 3, b >> 3)
-				#endif
-				screen->SetPixel(x, y, COLOR(rgba[3], rgba[2], rgba[1]));
-				rgba += 4;
+		CBcmFrameBuffer **fbp = (CBcmFrameBuffer**)userdata;
+		CBcmFrameBuffer *fb = *fbp;
+
+		if (!fb)
+			return -1;
+
+		unsigned w = fb->GetWidth();
+		unsigned h = fb->GetHeight();
+
+		if ((width != screen_width) || (height != screen_height)) {
+			screen_width = width;
+			screen_height = height;
+
+			delete fb;
+			*fbp = new CBcmFrameBuffer(w, h, 32, (unsigned)width, (unsigned)height, 0, TRUE);
+			fb = *fbp;
+
+			if (!fb->Initialize()) {
+				VXT_LOG("Cannot recreate framebuffer!");
+				return -1;	
 			}
+		}
+
+		u8 *buffer = (u8*)fb->GetBuffer();
+		for (int i = 0; i < height; i++) {
+			memcpy(buffer, rgba, 4 * width);
+			buffer += fb->GetPitch();
+			rgba += 4 * width;
 		}
 	    return 0;
 	}
 }
 
 CKernel::CKernel(void)
-:	m_Screen(m_Options.GetWidth(), m_Options.GetHeight()),
+:	m_CPUThrottle(CPUSpeedMaximum),
 	m_Timer(&m_Interrupt),
 	m_Logger(m_Options.GetLogLevel()),
 	m_USBHCI(&m_Interrupt, &m_Timer, TRUE),
 	m_EMMC(&m_Interrupt, &m_Timer, NULL),
 	m_pKeyboard(0),
-	m_ShutdownMode(ShutdownNone)
+	m_ShutdownMode(ShutdownNone),
+	m_pFrameBuffer(0),
+	m_Modifiers(0)
 {
 	memset(m_RawKeys, 0, sizeof(m_RawKeys));
-	m_Modifiers = 0;
 	s_pThis = this;
 }
 
 CKernel::~CKernel(void) {
+	if (m_pFrameBuffer)
+		delete m_pFrameBuffer;
 	s_pThis = 0;
 }
 
 boolean CKernel::Initialize(void) {
 	boolean bOK = TRUE;
 	if (bOK)
-		bOK = m_Screen.Initialize();
-
-	if (bOK)
 		bOK = m_Serial.Initialize(115200);
 
 	#if LOGGING
-		if (bOK) {
-			CDevice *pTarget = m_DeviceNameService.GetDevice(m_Options.GetLogDevice(), FALSE);
-			if (pTarget)
-				pTarget = &m_Screen;
-			bOK = m_Logger.Initialize(pTarget);
-		}
+		if (bOK)
+			bOK = m_Logger.Initialize(m_DeviceNameService.GetDevice(m_Options.GetLogDevice(), FALSE));
 	#endif
 
 	if (bOK)
@@ -224,6 +262,7 @@ boolean CKernel::Initialize(void) {
 
 	if (bOK)
 		bOK = m_EMMC.Initialize();
+
 	return bOK;
 }
 
@@ -235,14 +274,8 @@ TShutdownMode CKernel::Run(void) {
 
 	vxt_set_logger(&logger);
 
-	if (sizeof(TScreenColor) < 2) {
-		VXT_LOG("Screen color depth must be 16 or 32 bit!");
-		return (m_ShutdownMode = ShutdownHalt);
-	} else {
-		VXT_LOG("Screen color depth: %dbit", sizeof(TScreenColor) * 8);
-	}
-
-	FRESULT res = f_mount(&m_FileSystem, DRIVE, 1);
+	FATFS emmc_fs;
+	FRESULT res = f_mount(&emmc_fs, DRIVE, 1);
 	if (res != FR_OK) {
 		VXT_PRINT("Cannot mout filesystem: ");
 		switch (res) {
@@ -255,6 +288,12 @@ TShutdownMode CKernel::Run(void) {
 		}
 	}
 
+	m_pFrameBuffer = new CBcmFrameBuffer(m_Options.GetWidth(), m_Options.GetHeight(), 32, (unsigned)screen_width, (unsigned)screen_height, 0, TRUE);
+	if (!m_pFrameBuffer->Initialize()) {
+		VXT_LOG("Could not initialize framebuffer!");
+		return (m_ShutdownMode = ShutdownHalt);
+	}
+	
 	FIL file;
 	open_disk: if (f_open(&file, DRIVE DISKIMAGE, FA_READ|FA_WRITE|FA_OPEN_EXISTING) != FR_OK) {
 		VXT_LOG("Cannot open file: %s", DISKIMAGE);
@@ -273,6 +312,9 @@ TShutdownMode CKernel::Run(void) {
 			return (m_ShutdownMode = ShutdownHalt);
 		}
 	}
+
+	if ((pUMSD1 = m_DeviceNameService.GetDevice("umsd1", TRUE)))
+		VXT_LOG("Found USB storage device!");
 	
 	struct vxtu_disk_interface intrf = {
 		&read_file, &write_file, &seek_file, &tell_file
@@ -314,6 +356,7 @@ TShutdownMode CKernel::Run(void) {
 	}
 
 	vxtu_disk_mount(disk, 128, &file);
+	if (pUMSD1) vxtu_disk_mount(disk, 129, pUMSD1);
 	vxtu_disk_set_boot_drive(disk, 128);
 
 	VXT_LOG("CPU reset!");
@@ -323,7 +366,9 @@ TShutdownMode CKernel::Run(void) {
 	u64 renderTicks = CTimer::GetClockTicks64();
 	u64 cpuTicks = renderTicks;
 	
-	for (unsigned nCount = 0; m_ShutdownMode == ShutdownNone;) {
+	while (m_ShutdownMode == ShutdownNone) {
+		m_CPUThrottle.Update();
+	
 		u64 ticks = CTimer::GetClockTicks64();
 		if ((ticks - renderTicks) >= (CLOCKHZ / 60)) {
 			renderTicks = ticks;
@@ -341,9 +386,7 @@ TShutdownMode CKernel::Run(void) {
 				m_pKeyboard->UpdateLEDs();
 
 			cga_snapshot(cga);
-	    	cga_render(cga, &render_callback, &m_Screen);
-
-			m_Screen.Rotor(0, nCount++);
+	    	cga_render(cga, &render_callback, &m_pFrameBuffer);
 		}
 
 		u64 dtics = ticks - cpuTicks;
