@@ -19,7 +19,9 @@ OBJS_VXT = $(VXTHOME)/cpu.o \
 	$(VXTHOME)/system.o \
 	$(VXTHOME)/uart.o
 
-OBJS = main.o kernel.o cga.o $(OBJS_VXT)
+OBJS_LIBC = $(VXTHOME)/../scanf/scanf.o
+
+OBJS = main.o kernel.o cga.o mouse.o $(OBJS_VXT) $(OBJS_LIBC)
 
 LIBS = $(CIRCLEHOME)/lib/usb/libusb.a \
 	$(CIRCLEHOME)/lib/input/libinput.a \

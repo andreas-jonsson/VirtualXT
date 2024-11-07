@@ -34,6 +34,7 @@
 #include <circle/logger.h>
 #include <circle/usb/usbhcidevice.h>
 #include <circle/usb/usbkeyboard.h>
+#include <circle/usb/usbmouse.h>
 #include <circle/types.h>
 #include <SDCard/emmc.h>
 
@@ -65,6 +66,9 @@ private:
 	static void KeyStatusHandlerRaw(unsigned char ucModifiers, const unsigned char RawKeys[6]);
 	static void KeyboardRemovedHandler(CDevice *pDevice, void *pContext);
 
+	static void MouseStatusHandlerRaw(unsigned nButtons, int nDisplacementX, int nDisplacementY, int nWheelMove);
+	static void MouseRemovedHandler(CDevice *pDevice, void *pContext);
+
 	// Do not change this order!
 	CKernelOptions		m_Options;
 	CDeviceNameService	m_DeviceNameService;
@@ -77,10 +81,9 @@ private:
 	CUSBHCIDevice		m_USBHCI;
 	CEMMCDevice			m_EMMC;
 
+	CMouseDevice *volatile m_pMouse;
 	CUSBKeyboardDevice *volatile m_pKeyboard;
 	volatile TShutdownMode m_ShutdownMode;
-
-	CBcmFrameBuffer	*m_pFrameBuffer;
 
 	unsigned char m_Modifiers;
 	unsigned char m_RawKeys[6];

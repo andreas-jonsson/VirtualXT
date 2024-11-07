@@ -19,8 +19,6 @@
 // 3. This notice may not be removed or altered from any source
 //    distribution.
 
-#define LOGGING 0
-
 #include "kernel.h"
 #include <circle/string.h>
 #include <circle/util.h>
@@ -29,20 +27,28 @@
 #include <assert.h>
 
 #include <vxt/vxtu.h>
+#include <frontend.h>
 #include "keymap.h"
 
-int screen_width = 640;
-int screen_height = 480;
+int screen_width = 0;
+int screen_height = 0;
 struct vxt_peripheral *ppi = 0;
+struct vxt_peripheral *mouse = 0;
 
 CKernel *CKernel::s_pThis = 0;
+CBcmFrameBuffer *pFrameBuffer = 0;
 CDevice *pUMSD1 = 0;
 int pUMSD1_head = 0;
 
+FIL log_file = {0};
+
+#define LOGFILE "virtualxt.log"
+//#define LOGDEV
+
 #define DRIVE "SD:"
-#define DISKIMAGE "virtualxt.img"
-#define NEWIMAGESIZE_MB 40
-#define MAX_DISKSIZE_MB 1024*1024*256
+#define FLOPPYIMAGE "A.img"
+#define DISKIMAGE "C.img"
+#define MAX_DISKSIZE (1024 * 16 * 63 * 512)
 #define BIOSIMAGE "GLABIOS.ROM"
 #define CPU_FREQUENCY VXT_DEFAULT_FREQUENCY
 
@@ -69,44 +75,61 @@ extern "C" {
 		return np;
 	}
 
-	static int logger(const char *fmt, ...) {
+#ifdef LOGFILE
+	static int file_logger(const char *fmt, ...) {
 		va_list alist;
 		va_start(alist, fmt);
-
-		#if LOGGING
-			static CString string_buffer;
-
-			CString str;
-			str.FormatV(fmt, alist);
-			string_buffer.Append(str);
-			
-			int idx = string_buffer.Find('\n');
-			if (idx >= 0) {
-				char *cstr = new char[idx + 1]; 
-				memcpy(cstr, string_buffer, idx);
-				cstr[idx] = 0;
-				CLogger::Get()->Write("VirtualXT", LogNotice, cstr);
-				string_buffer = &string_buffer[idx + 1];
-				delete[] cstr;
-			}
-		#endif
+		
+		CString str;
+		str.FormatV(fmt, alist);
+		f_write(&log_file, str, str.GetLength(), 0);
+		f_sync(&log_file);
 		
 		va_end(alist);
 		return 0; // Not correct but it will have to do for now.
 	}
+#endif
+
+#ifdef LOGDEV
+	static int dev_logger(const char *fmt, ...) {
+		va_list alist;
+		va_start(alist, fmt);
+
+		static CString string_buffer;
+
+		CString str;
+		str.FormatV(fmt, alist);
+		string_buffer.Append(str);
+		
+		int idx = string_buffer.Find('\n');
+		if (idx >= 0) {
+			char *cstr = new char[idx + 1]; 
+			memcpy(cstr, string_buffer, idx);
+			cstr[idx] = 0;
+			CLogger::Get()->Write("VirtualXT", LogNotice, cstr);
+			string_buffer = &string_buffer[idx + 1];
+			delete[] cstr;
+		}
+		
+		va_end(alist);
+		return 0; // Not correct but it will have to do for now.
+	}
+#endif
 
 	static int tell_file(vxt_system *s, void *fp) {
 		(void)s;
-		if (fp == pUMSD1)
-			return pUMSD1_head;
-		return (int)f_tell((FIL*)fp);
+		return (fp == pUMSD1) ? pUMSD1_head : (int)f_tell((FIL*)fp);
 	}
 
 	static int read_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
 		(void)s;
-		if (fp == pUMSD1) {
-			pUMSD1_head += size;
-			return (int)pUMSD1->Read(buffer, size);
+		if (fp == pUMSD1) {			
+			if (pUMSD1->Seek(pUMSD1_head) < 0)
+				return -1;
+			int n = pUMSD1->Read(buffer, size);
+			if (n < 0)
+				return n;
+			return (pUMSD1_head += n);
 		}
 		
 		UINT out = 0;
@@ -118,8 +141,12 @@ extern "C" {
 	static int write_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
 		(void)s;
 		if (fp == pUMSD1) {
-			pUMSD1_head += size;
-			return (int)pUMSD1->Write(buffer, size);
+			if (pUMSD1->Seek(pUMSD1_head) < 0)
+				return -1;
+			int n = pUMSD1->Write(buffer, size);
+			if (n < 0)
+				return n;
+			return (pUMSD1_head += n);
 		}
 		
 		UINT out = 0;
@@ -132,13 +159,13 @@ extern "C" {
 
 	static int seek_file(vxt_system *s, void *fp, int offset, enum vxtu_disk_seek whence) {
 		(void)s;
+		u64 sz = (fp == pUMSD1) ? pUMSD1->GetSize() : f_size((FIL*)fp);
+		if (sz > MAX_DISKSIZE)
+			sz = MAX_DISKSIZE;
 
 		int disk_head = tell_file(s, fp);
-		int disk_sz = (fp == pUMSD1) ? (int)pUMSD1->GetSize() : (int)f_size((FIL*)fp);
+		int disk_sz = (int)sz;
 		int pos = -1;
-
-		if (disk_sz > MAX_DISKSIZE_MB)
-			disk_sz = MAX_DISKSIZE_MB;
 
 		switch (whence) {
 			case VXTU_SEEK_START:
@@ -160,8 +187,10 @@ extern "C" {
 				return -1;
 		}
 
-		if (fp == pUMSD1)
-			return (int)pUMSD1->Seek((pUMSD1_head = pos));
+		if (fp == pUMSD1) {
+			pUMSD1_head = pos;
+			return 0;
+		}
 		return (f_lseek((FIL*)fp, (FSIZE_t)pos) == FR_OK) ? 0 : -1;
 	}
 
@@ -187,33 +216,32 @@ extern "C" {
 	}
 	
 	static int render_callback(int width, int height, const vxt_byte *rgba, void *userdata) {
-		CBcmFrameBuffer **fbp = (CBcmFrameBuffer**)userdata;
-		CBcmFrameBuffer *fb = *fbp;
-
-		if (!fb)
-			return -1;
-
-		unsigned w = fb->GetWidth();
-		unsigned h = fb->GetHeight();
-
-		if ((width != screen_width) || (height != screen_height)) {
+		if ((width != screen_width) || (height != screen_height) || !pFrameBuffer) {
 			screen_width = width;
 			screen_height = height;
 
-			delete fb;
-			*fbp = new CBcmFrameBuffer(w, h, 32, (unsigned)width, (unsigned)height, 0, TRUE);
-			fb = *fbp;
+			if (pFrameBuffer)
+				delete pFrameBuffer;
 
-			if (!fb->Initialize()) {
-				VXT_LOG("Cannot recreate framebuffer!");
-				return -1;	
+			CKernelOptions *opt = (CKernelOptions*)userdata;
+			pFrameBuffer = new CBcmFrameBuffer((unsigned)width, (unsigned)height, 32);
+
+			if (!pFrameBuffer->Initialize()) {
+				VXT_LOG("Could not set correct ressolution. Fallback to device default.");
+				pFrameBuffer = new CBcmFrameBuffer(opt->GetWidth(), opt->GetHeight(), 32);
+
+				if (!pFrameBuffer->Initialize()) {
+					VXT_LOG("Could not initialize framebuffer!");
+					delete pFrameBuffer;
+					return -1;
+				}
 			}
 		}
 
-		u8 *buffer = (u8*)fb->GetBuffer();
+		u8 *buffer = (u8*)pFrameBuffer->GetBuffer();
 		for (int i = 0; i < height; i++) {
 			memcpy(buffer, rgba, 4 * width);
-			buffer += fb->GetPitch();
+			buffer += pFrameBuffer->GetPitch();
 			rgba += 4 * width;
 		}
 	    return 0;
@@ -226,18 +254,23 @@ CKernel::CKernel(void)
 	m_Logger(m_Options.GetLogLevel()),
 	m_USBHCI(&m_Interrupt, &m_Timer, TRUE),
 	m_EMMC(&m_Interrupt, &m_Timer, NULL),
+	m_pMouse(0),
 	m_pKeyboard(0),
 	m_ShutdownMode(ShutdownNone),
-	m_pFrameBuffer(0),
 	m_Modifiers(0)
 {
+	// Initialize here to clear screen during boot.
+	pFrameBuffer = new CBcmFrameBuffer(m_Options.GetWidth(), m_Options.GetHeight(), 32);
+	if (!pFrameBuffer->Initialize())
+		delete pFrameBuffer;
+
 	memset(m_RawKeys, 0, sizeof(m_RawKeys));
 	s_pThis = this;
 }
 
 CKernel::~CKernel(void) {
-	if (m_pFrameBuffer)
-		delete m_pFrameBuffer;
+	if (pFrameBuffer)
+		delete pFrameBuffer;
 	s_pThis = 0;
 }
 
@@ -246,7 +279,7 @@ boolean CKernel::Initialize(void) {
 	if (bOK)
 		bOK = m_Serial.Initialize(115200);
 
-	#if LOGGING
+	#ifdef LOGDEV
 		if (bOK)
 			bOK = m_Logger.Initialize(m_DeviceNameService.GetDevice(m_Options.GetLogDevice(), FALSE));
 	#endif
@@ -269,10 +302,11 @@ boolean CKernel::Initialize(void) {
 TShutdownMode CKernel::Run(void) {
 	struct vxt_peripheral *disk = NULL;
 	struct vxt_peripheral *cga = NULL;
-	//struct vxt_peripheral *mouse = NULL;
 	//struct vxt_peripheral *joystick = NULL;
 
-	vxt_set_logger(&logger);
+	#ifdef LOGDEV
+		vxt_set_logger(&dev_logger);
+	#endif
 
 	FATFS emmc_fs;
 	FRESULT res = f_mount(&emmc_fs, DRIVE, 1);
@@ -288,29 +322,23 @@ TShutdownMode CKernel::Run(void) {
 		}
 	}
 
-	m_pFrameBuffer = new CBcmFrameBuffer(m_Options.GetWidth(), m_Options.GetHeight(), 32, (unsigned)screen_width, (unsigned)screen_height, 0, TRUE);
-	if (!m_pFrameBuffer->Initialize()) {
-		VXT_LOG("Could not initialize framebuffer!");
-		return (m_ShutdownMode = ShutdownHalt);
-	}
-	
-	FIL file;
-	open_disk: if (f_open(&file, DRIVE DISKIMAGE, FA_READ|FA_WRITE|FA_OPEN_EXISTING) != FR_OK) {
-		VXT_LOG("Cannot open file: %s", DISKIMAGE);
-		VXT_LOG("Creating one now...");
+	#ifdef LOGFILE
+		if (f_open(&log_file, DRIVE LOGFILE, FA_WRITE|FA_CREATE_ALWAYS) == FR_OK)
+			vxt_set_logger(&file_logger);
+	#endif
 
-		if (f_open(&file, DRIVE DISKIMAGE, FA_WRITE|FA_CREATE_NEW) == FR_OK) {
-			static const char buffer[512] = {0};
-			UINT tmp;
-			for (int i = 0; i < 2000 * NEWIMAGESIZE_MB; i++)
-				f_write(&file, buffer, sizeof(buffer), &tmp);
-			f_close(&file);
-			VXT_LOG("Done!");
-			goto open_disk;
-		} else {
-			VXT_LOG("Error! Can't create disk image: %s", DISKIMAGE);
-			return (m_ShutdownMode = ShutdownHalt);
-		}
+	bool has_floppy = true;
+	FIL floppy_file;
+	if (f_open(&floppy_file, DRIVE FLOPPYIMAGE, FA_READ|FA_WRITE|FA_OPEN_EXISTING) != FR_OK) {
+		has_floppy = false;
+		VXT_LOG("Cannot open floppy image: %s", FLOPPYIMAGE);
+	}
+
+	bool has_hd = true;
+	FIL hd_file;
+	if (f_open(&hd_file, DRIVE DISKIMAGE, FA_READ|FA_WRITE|FA_OPEN_EXISTING) != FR_OK) {
+		VXT_LOG("Cannot open harddrive image: %s", DISKIMAGE);
+		has_hd = false;
 	}
 
 	if ((pUMSD1 = m_DeviceNameService.GetDevice("umsd1", TRUE)))
@@ -331,7 +359,7 @@ TShutdownMode CKernel::Run(void) {
 		(ppi = vxtu_ppi_create(&allocator)),
 		(cga = cga_create(&allocator)),
 		(disk = vxtu_disk_create(&allocator, &intrf)),
-		//(mouse = mouse_create(&allocator, NULL, "0x3F8")),
+		(mouse = mouse_create(&allocator, NULL, "0x3F8")),
 		//(joystick = joystick_create(&allocator, NULL, "0x201")),
 		NULL
 	};
@@ -355,8 +383,11 @@ TShutdownMode CKernel::Run(void) {
 			VXT_LOG("%d - %s", i, vxt_peripheral_name(device));
 	}
 
-	vxtu_disk_mount(disk, 128, &file);
-	if (pUMSD1) vxtu_disk_mount(disk, 129, pUMSD1);
+	int next_hd = 128;
+	if (has_floppy) vxtu_disk_mount(disk, 0, &floppy_file);
+	if (has_hd) vxtu_disk_mount(disk, next_hd++, &hd_file);
+	if (pUMSD1) vxtu_disk_mount(disk, next_hd++, pUMSD1);
+	//vxtu_disk_set_boot_drive(disk, has_floppy ? 0 : 128);
 	vxtu_disk_set_boot_drive(disk, 128);
 
 	VXT_LOG("CPU reset!");
@@ -373,12 +404,23 @@ TShutdownMode CKernel::Run(void) {
 		if ((ticks - renderTicks) >= (CLOCKHZ / 60)) {
 			renderTicks = ticks;
 			
-			if (m_USBHCI.UpdatePlugAndPlay() && !m_pKeyboard) {
-				m_pKeyboard = (CUSBKeyboardDevice*)m_DeviceNameService.GetDevice("ukbd1", FALSE);
-				if (m_pKeyboard) {
-					m_pKeyboard->RegisterRemovedHandler(KeyboardRemovedHandler);
-					m_pKeyboard->RegisterKeyStatusHandlerRaw(KeyStatusHandlerRaw);
-					VXT_LOG("Keyboard connected!");
+			if (m_USBHCI.UpdatePlugAndPlay()) {
+				if (!m_pKeyboard) {
+					m_pKeyboard = (CUSBKeyboardDevice*)m_DeviceNameService.GetDevice("ukbd1", FALSE);
+					if (m_pKeyboard) {
+						m_pKeyboard->RegisterRemovedHandler(KeyboardRemovedHandler);
+						m_pKeyboard->RegisterKeyStatusHandlerRaw(KeyStatusHandlerRaw);
+						VXT_LOG("Keyboard connected!");
+					}
+				}
+
+				if (!m_pMouse) {
+					m_pMouse = (CMouseDevice*)m_DeviceNameService.GetDevice("mouse1", FALSE);
+					if (m_pMouse){
+						m_pMouse->RegisterRemovedHandler(MouseRemovedHandler);
+						m_pMouse->RegisterStatusHandler(MouseStatusHandlerRaw);
+						VXT_LOG("Mouse connected!");
+					}
 				}
 			}
 
@@ -386,7 +428,7 @@ TShutdownMode CKernel::Run(void) {
 				m_pKeyboard->UpdateLEDs();
 
 			cga_snapshot(cga);
-	    	cga_render(cga, &render_callback, &m_pFrameBuffer);
+	    	cga_render(cga, &render_callback, &m_Options);
 		}
 
 		u64 dtics = ticks - cpuTicks;
@@ -399,6 +441,9 @@ TShutdownMode CKernel::Run(void) {
 	}
 
 	vxt_system_destroy(s);
+
+	if (has_floppy) f_close(&floppy_file);
+	if (has_hd) f_close(&hd_file);
 	f_unmount(DRIVE);
 	
 	return m_ShutdownMode;
@@ -466,4 +511,19 @@ void CKernel::KeyboardRemovedHandler(CDevice *pDevice, void *pContext) {
 	assert(s_pThis);
 	VXT_LOG("Keyboard removed!");
 	s_pThis->m_pKeyboard = 0;
+}
+
+void CKernel::MouseStatusHandlerRaw(unsigned nButtons, int nDisplacementX, int nDisplacementY, int nWheelMove) {
+	assert(s_pThis != 0);
+	int btn = (nButtons & MOUSE_BUTTON_LEFT) ? FRONTEND_MOUSE_LEFT : 0;
+	btn |= (nButtons & MOUSE_BUTTON_RIGHT) ? FRONTEND_MOUSE_RIGHT : 0;
+
+	struct frontend_mouse_event state = {(enum frontend_mouse_button)btn, nDisplacementX, nDisplacementY};
+	mouse_push_event(mouse, &state);
+}
+
+void CKernel::MouseRemovedHandler(CDevice *pDevice, void *pContext) {
+	assert(s_pThis != 0);
+	VXT_LOG("Mouse removed!");
+	s_pThis->m_pMouse = 0;
 }

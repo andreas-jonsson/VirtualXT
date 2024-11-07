@@ -19,7 +19,16 @@
 // 3. This notice may not be removed or altered from any source
 //    distribution.
 
+#include "../../lib/scanf/scanf.h"
 #include "../../modules/mouse/mouse.c"
+
+int getch_(void) {
+	return 0;
+}
+
+void ungetch_(int ch) {
+	(void)ch;
+}
 
 struct vxt_peripheral *mouse_create(vxt_allocator *alloc, void *frontend, const char *args) {
     return create(alloc, frontend, args);
