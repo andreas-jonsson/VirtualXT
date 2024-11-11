@@ -46,7 +46,7 @@ jobs:
         
       - name: Build
         run: |
-          cd front/rpi && make
+          cd front/rpi && CIRCLEHOME="${GITHUB_WORKSPACE}/circle-master" make
 
       #- name: Package & Deploy
       #  env:
