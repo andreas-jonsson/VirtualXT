@@ -96,7 +96,7 @@ extern "C" {
     typedef unsigned int vxt_dword;
     typedef unsigned int vxt_pointer;
 #else
-    #ifndef __STDC_HOSTED__
+    #if !defined(__cplusplus) && !defined(__STDC_HOSTED__)
         #error "Use VXT_NO_LIBC for builds without hosted environment."
     #endif
 
@@ -117,7 +117,7 @@ extern "C" {
     typedef uint32_t vxt_pointer;
 #endif
 
-#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
+#if !defined(__cplusplus) && (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L)
     #error "libvxt require C11 support!"
 #endif
 

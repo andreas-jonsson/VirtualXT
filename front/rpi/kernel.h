@@ -40,7 +40,6 @@
 #include <circle/types.h>
 #include <SDCard/emmc.h>
 
-#define __STDC_VERSION__ 201112L // Why do I need this?
 #define _Static_assert static_assert
 #define bool bool
 
