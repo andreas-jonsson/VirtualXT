@@ -154,7 +154,7 @@ $(document).ready(function(){initNavTree('vxt_8h_source.html',''); initResizable
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <a class="code" href="vxt_8h.html#a1c42ca54bcee0c9fd5c01b5b3c076276">vxt_dword</a>;</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    <span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <a class="code" href="vxt_8h.html#acdaa6dbd7750ec3dcc0d0e822dba8ea6">vxt_pointer</a>;</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<span class="preprocessor">    #ifndef __STDC_HOSTED__</span></div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<span class="preprocessor">    #if !defined(__cplusplus) &amp;&amp; !defined(__STDC_HOSTED__)</span></div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;<span class="preprocessor">        #error &quot;Use VXT_NO_LIBC for builds without hosted environment.&quot;</span></div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="preprocessor">    #endif</span></div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
@@ -175,7 +175,7 @@ $(document).ready(function(){initNavTree('vxt_8h_source.html',''); initResizable
 <div class="line"><a name="l00117"></a><span class="lineno"><a class="line" href="vxt_8h.html#acdaa6dbd7750ec3dcc0d0e822dba8ea6">  117</a></span>&#160;    <span class="keyword">typedef</span> uint32_t <a class="code" href="vxt_8h.html#acdaa6dbd7750ec3dcc0d0e822dba8ea6">vxt_pointer</a>;</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160; </div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;<span class="preprocessor">#if !defined(__STDC_VERSION__) || __STDC_VERSION__ &lt; 201112L</span></div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;<span class="preprocessor">#if !defined(__cplusplus) &amp;&amp; (!defined(__STDC_VERSION__) || __STDC_VERSION__ &lt; 201112L)</span></div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;<span class="preprocessor">    #error &quot;libvxt require C11 support!&quot;</span></div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160; </div>
