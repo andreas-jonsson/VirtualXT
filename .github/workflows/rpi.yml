@@ -43,8 +43,9 @@ jobs:
       - name: Test & Check
         run: |
           premake5 check
+          premake5 --test gmake
           make test
-          make clean          
+          make clean         
         
       - name: Build
         run: |
