@@ -51,7 +51,10 @@ jobs:
           make -C "${CIRCLEHOME}/addon/SDCard"
           make -C "${GITHUB_WORKSPACE}/front/rpi"
 
-      - name: Package & Deploy
+      - name: Package
+        run: ./tools/package/itch/package.rasberrypi.sh
+
+      - name: Deploy
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
         run: if [[ $GITHUB_REF_NAME =~ ^(edge|release|develop)$ ]]; then ./tools/package/itch/push-rasberrypi.sh; fi
