@@ -50,6 +50,7 @@ jobs:
       - name: Build
         run: |
           export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-master"
+          make -C "${CIRCLEHOME}/boot"
           make -C "${CIRCLEHOME}/addon/fatfs"
           make -C "${CIRCLEHOME}/addon/SDCard"
           make -C "${GITHUB_WORKSPACE}/front/rpi"
