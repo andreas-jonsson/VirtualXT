@@ -46,7 +46,9 @@ jobs:
         
       - name: Build
         run: |
-          cd front/rpi && CIRCLEHOME="${GITHUB_WORKSPACE}/circle-master" make
+          export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-master"
+          make -C "${CIRCLEHOME}/addon/fatfs"
+          make -C "${GITHUB_WORKSPACE}/front/rpi"
 
       #- name: Package & Deploy
       #  env:
