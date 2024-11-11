@@ -63,4 +63,4 @@ jobs:
       - name: Deploy
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-        run: if [[ $GITHUB_REF_NAME =~ ^(edge|release|develop)$ ]]; then ./tools/package/itch/push-rasberrypi.sh; fi
+        run: if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then ./tools/package/itch/push-rasberrypi.sh; fi
