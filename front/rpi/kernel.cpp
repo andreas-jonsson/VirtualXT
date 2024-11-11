@@ -30,6 +30,9 @@
 #include <frontend.h>
 #include "keymap.h"
 
+volatile bool mouse_updated = false;
+volatile struct frontend_mouse_event mouse_state = {0};
+
 int screen_width = 0;
 int screen_height = 0;
 struct vxt_peripheral *ppi = 0;
@@ -38,7 +41,7 @@ struct vxt_peripheral *mouse = 0;
 CKernel *CKernel::s_pThis = 0;
 CBcmFrameBuffer *pFrameBuffer = 0;
 CDevice *pUMSD1 = 0;
-int pUMSD1_head = 0;
+volatile int pUMSD1_head = 0;
 
 FIL log_file = {0};
 
@@ -51,6 +54,7 @@ FIL log_file = {0};
 #define MAX_DISKSIZE (1024 * 16 * 63 * 512)
 #define BIOSIMAGE "GLABIOS.ROM"
 #define CPU_FREQUENCY VXT_DEFAULT_FREQUENCY
+#define SAMPLE_RATE	48000
 
 extern "C" {
 	#include "../../modules/cga/cga.h"
@@ -227,8 +231,8 @@ extern "C" {
 			pFrameBuffer = new CBcmFrameBuffer((unsigned)width, (unsigned)height, 32);
 
 			if (!pFrameBuffer->Initialize()) {
-				VXT_LOG("Could not set correct ressolution. Fallback to device default.");
-				pFrameBuffer = new CBcmFrameBuffer(opt->GetWidth(), opt->GetHeight(), 32);
+				VXT_LOG("Could not set correct ressolution. Fallback to virtual resolution.");
+				pFrameBuffer = new CBcmFrameBuffer(opt->GetWidth(), opt->GetHeight(), 32, (unsigned)width, (unsigned)height);
 
 				if (!pFrameBuffer->Initialize()) {
 					VXT_LOG("Could not initialize framebuffer!");
@@ -257,8 +261,8 @@ CKernel::CKernel(void)
 	m_pMouse(0),
 	m_pKeyboard(0),
 	m_ShutdownMode(ShutdownNone),
-	m_Modifiers(0)
-{
+	m_pSound(0),
+	m_Modifiers(0){
 	// Initialize here to clear screen during boot.
 	pFrameBuffer = new CBcmFrameBuffer(m_Options.GetWidth(), m_Options.GetHeight(), 32);
 	if (!pFrameBuffer->Initialize())
@@ -343,6 +347,24 @@ TShutdownMode CKernel::Run(void) {
 
 	if ((pUMSD1 = m_DeviceNameService.GetDevice("umsd1", TRUE)))
 		VXT_LOG("Found USB storage device!");
+
+	const char *pSoundDevice = m_Options.GetSoundDevice();
+	if (!strcmp(pSoundDevice, "sndpwm")) {
+		m_pSound = new CPWMSoundBaseDevice(&m_Interrupt, SAMPLE_RATE, 1);
+
+		if (!m_pSound->AllocateQueueFrames(1))
+			VXT_LOG("Cannot allocate sound queue!");
+
+		m_pSound->SetWriteFormat(SoundFormatSigned16, 1);
+
+		//unsigned nQueueSizeFrames = m_pSound->GetQueueSizeFrames();
+		//WriteSoundData(nQueueSizeFrames);
+
+		if (!m_pSound->Start())
+			VXT_LOG("Cannot start sound device!");
+	} else {
+		VXT_LOG("No supported audio device!");
+	}
 	
 	struct vxtu_disk_interface intrf = {
 		&read_file, &write_file, &seek_file, &tell_file
@@ -387,20 +409,20 @@ TShutdownMode CKernel::Run(void) {
 	if (has_floppy) vxtu_disk_mount(disk, 0, &floppy_file);
 	if (has_hd) vxtu_disk_mount(disk, next_hd++, &hd_file);
 	if (pUMSD1) vxtu_disk_mount(disk, next_hd++, pUMSD1);
-	//vxtu_disk_set_boot_drive(disk, has_floppy ? 0 : 128);
-	vxtu_disk_set_boot_drive(disk, 128);
-
+	vxtu_disk_set_boot_drive(disk, has_floppy ? 0 : 128);
+	
 	VXT_LOG("CPU reset!");
 	vxt_system_reset(s);
 
 	assert(CLOCKHZ == 1000000);
 	u64 renderTicks = CTimer::GetClockTicks64();
-	u64 cpuTicks = renderTicks;
+	u64 audioTicks = renderTicks;
+	u64 vCpuTicks = renderTicks * (CPU_FREQUENCY / 1000000);
 	
 	while (m_ShutdownMode == ShutdownNone) {
 		m_CPUThrottle.Update();
-	
 		u64 ticks = CTimer::GetClockTicks64();
+
 		if ((ticks - renderTicks) >= (CLOCKHZ / 60)) {
 			renderTicks = ticks;
 			
@@ -427,16 +449,30 @@ TShutdownMode CKernel::Run(void) {
 			if (m_pKeyboard)
 				m_pKeyboard->UpdateLEDs();
 
+			if (m_pMouse && mouse_updated) {
+				mouse_push_event(mouse, &mouse_state);
+				mouse_updated = false;
+			}
+
 			cga_snapshot(cga);
 	    	cga_render(cga, &render_callback, &m_Options);
 		}
 
-		u64 dtics = ticks - cpuTicks;
-		if (dtics) {
-			struct vxt_step step = vxt_system_step(s, (dtics * CPU_FREQUENCY) / 1000000);
+		if ((ticks - audioTicks) >= (CLOCKHZ / SAMPLE_RATE)) {
+			audioTicks = ticks;
+			if (m_pSound && m_pSound->IsActive()) {
+				short sample = vxtu_ppi_generate_sample(ppi, SAMPLE_RATE);
+				m_pSound->Write((u8*)&sample, 2);
+			}			
+		}
+
+		u64	cpuTicks = ticks * (CPU_FREQUENCY / 1000000);
+		if (vCpuTicks < cpuTicks) {
+			u64 dtics = cpuTicks - vCpuTicks;
+			struct vxt_step step = vxt_system_step(s, dtics);
 			if (step.err != VXT_NO_ERROR)
 				VXT_LOG(vxt_error_str(step.err));
-			cpuTicks = ticks;
+			vCpuTicks += step.cycles;
 		}
 	}
 
@@ -515,11 +551,16 @@ void CKernel::KeyboardRemovedHandler(CDevice *pDevice, void *pContext) {
 
 void CKernel::MouseStatusHandlerRaw(unsigned nButtons, int nDisplacementX, int nDisplacementY, int nWheelMove) {
 	assert(s_pThis != 0);
+	if (mouse_updated)
+		return;
+
 	int btn = (nButtons & MOUSE_BUTTON_LEFT) ? FRONTEND_MOUSE_LEFT : 0;
 	btn |= (nButtons & MOUSE_BUTTON_RIGHT) ? FRONTEND_MOUSE_RIGHT : 0;
 
-	struct frontend_mouse_event state = {(enum frontend_mouse_button)btn, nDisplacementX, nDisplacementY};
-	mouse_push_event(mouse, &state);
+	mouse_state.buttons = (enum frontend_mouse_button)btn;
+	mouse_state.xrel = nDisplacementX;
+	mouse_state.yrel = nDisplacementY;
+	mouse_updated = true;
 }
 
 void CKernel::MouseRemovedHandler(CDevice *pDevice, void *pContext) {

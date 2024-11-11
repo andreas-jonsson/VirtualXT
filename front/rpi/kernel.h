@@ -32,9 +32,11 @@
 #include <circle/interrupt.h>
 #include <circle/timer.h>
 #include <circle/logger.h>
+#include <circle/sound/soundbasedevice.h>
+#include <circle/sound/pwmsoundbasedevice.h>
 #include <circle/usb/usbhcidevice.h>
 #include <circle/usb/usbkeyboard.h>
-#include <circle/usb/usbmouse.h>
+#include <circle/input/mouse.h>
 #include <circle/types.h>
 #include <SDCard/emmc.h>
 
@@ -84,6 +86,8 @@ private:
 	CMouseDevice *volatile m_pMouse;
 	CUSBKeyboardDevice *volatile m_pKeyboard;
 	volatile TShutdownMode m_ShutdownMode;
+
+	CSoundBaseDevice *m_pSound;
 
 	unsigned char m_Modifiers;
 	unsigned char m_RawKeys[6];

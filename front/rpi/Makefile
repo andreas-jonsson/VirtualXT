@@ -24,6 +24,7 @@ OBJS_LIBC = $(VXTHOME)/../scanf/scanf.o
 OBJS = main.o kernel.o cga.o mouse.o $(OBJS_VXT) $(OBJS_LIBC)
 
 LIBS = $(CIRCLEHOME)/lib/usb/libusb.a \
+	$(CIRCLEHOME)/lib/sound/libsound.a \
 	$(CIRCLEHOME)/lib/input/libinput.a \
 	$(CIRCLEHOME)/lib/fs/libfs.a \
 	$(CIRCLEHOME)/lib/libcircle.a \
