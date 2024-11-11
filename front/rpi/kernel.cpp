@@ -469,7 +469,7 @@ TShutdownMode CKernel::Run(void) {
 		u64	cpuTicks = ticks * (CPU_FREQUENCY / 1000000);
 		if (vCpuTicks < cpuTicks) {
 			u64 dtics = cpuTicks - vCpuTicks;
-			struct vxt_step step = vxt_system_step(s, dtics);
+			struct vxt_step step = vxt_system_step(s, (dtics > CPU_FREQUENCY) ? CPU_FREQUENCY : dtics);
 			if (step.err != VXT_NO_ERROR)
 				VXT_LOG(vxt_error_str(step.err));
 			vCpuTicks += step.cycles;
