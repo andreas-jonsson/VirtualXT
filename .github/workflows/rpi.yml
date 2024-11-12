@@ -42,6 +42,7 @@ jobs:
           make clean         
 
       - name: Build (bootloader)
+        shell: bash
         run: |
           rm -rf "${GITHUB_WORKSPACE}/package"
           mkdir -p "${GITHUB_WORKSPACE}/package"
@@ -53,6 +54,7 @@ jobs:
           ./configure
           ./makeall
           make -C "${CIRCLEHOME}/boot"
+          ls -al "${CIRCLEHOME}/boot"
           cp "${CIRCLEHOME}/boot/*.dtb" "${GITHUB_WORKSPACE}/package"
           cp "${CIRCLEHOME}/boot/*.dat" "${GITHUB_WORKSPACE}/package"
           cp "${CIRCLEHOME}/boot/*.bin" "${GITHUB_WORKSPACE}/package"
