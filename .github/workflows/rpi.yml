@@ -13,7 +13,7 @@ env:
   
 jobs:
   rpi-build:
-    name: RPI3
+    name: RasberryPi
     runs-on: ubuntu-latest
 
     steps:

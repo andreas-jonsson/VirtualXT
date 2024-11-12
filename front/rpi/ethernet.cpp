@@ -199,7 +199,7 @@ static void out(struct ethernet *n, vxt_word port, vxt_byte data) {
 		case 0xFF: // copy_package
 			// Do we have a valid buffer?
 			if (r->es || r->di) {
-				for (int i = 0; i < n->rx_len; i++)
+				for (int i = 0; i < (int)n->rx_len; i++)
 					vxt_system_write_byte(s, VXT_POINTER(r->es, r->di + i), n->rx_buffer[i]);
 
 				// Callback expects buffer in DS:SI
@@ -222,7 +222,7 @@ static void out(struct ethernet *n, vxt_word port, vxt_byte data) {
 	}
 }
 
-static vxt_error reset(struct ethernet *n, struct ebridge *state) {
+static vxt_error reset(struct ethernet *n, struct ethernet *state) {
 	if (state)
 		return VXT_CANT_RESTORE;
 		
