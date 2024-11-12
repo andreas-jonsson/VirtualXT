@@ -37,7 +37,10 @@
 #include <circle/usb/usbhcidevice.h>
 #include <circle/usb/usbkeyboard.h>
 #include <circle/input/mouse.h>
+#include <circle/bcm54213.h>
+#include <circle/macb.h>
 #include <circle/types.h>
+
 #include <SDCard/emmc.h>
 
 #define _Static_assert static_assert
@@ -81,6 +84,11 @@ private:
 	CLogger				m_Logger;
 	CUSBHCIDevice		m_USBHCI;
 	CEMMCDevice			m_EMMC;
+#if RASPPI == 4
+	CBcm54213Device		m_Bcm54213;
+#elif RASPPI == 5
+	CMACBDevice			m_MACB;
+#endif
 
 	CMouseDevice *volatile m_pMouse;
 	CUSBKeyboardDevice *volatile m_pKeyboard;

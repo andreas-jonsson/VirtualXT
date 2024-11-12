@@ -67,6 +67,9 @@ extern "C" {
 	struct vxt_peripheral *mouse_create(vxt_allocator *alloc, void *frontend, const char *args);
 	bool mouse_push_event(struct vxt_peripheral *p, const struct frontend_mouse_event *ev);
 
+	// From ethernet.cpp
+	struct vxt_peripheral *ethernet_create(vxt_allocator *alloc);
+
 	static void *allocator(void *ptr, size_t sz) {
 		if (!sz) {
 			if (ptr)
@@ -300,6 +303,13 @@ boolean CKernel::Initialize(void) {
 	if (bOK)
 		bOK = m_EMMC.Initialize();
 
+	if (bOK) {
+		#if RASPPI == 4
+			bOK = m_Bcm54213.Initialize();
+		#elif RASPPI == 5
+			bOK = m_MACB.Initialize();
+		#endif
+	}
 	return bOK;
 }
 
@@ -378,6 +388,7 @@ TShutdownMode CKernel::Run(void) {
 		vxtu_pic_create(&allocator),
 		vxtu_dma_create(&allocator),
 		vxtu_pit_create(&allocator),
+		ethernet_create(&allocator),
 		(ppi = vxtu_ppi_create(&allocator)),
 		(cga = cga_create(&allocator)),
 		(disk = vxtu_disk_create(&allocator, &intrf)),
