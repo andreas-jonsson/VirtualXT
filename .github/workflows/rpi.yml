@@ -80,9 +80,11 @@ jobs:
           unzip circle.zip
           cd "${CIRCLEHOME}"
           ./configure -r 4
-          RASPPI=4 ./makeall # Not sure why we have to force this?
+          ./makeall
           make -C "${CIRCLEHOME}/addon/fatfs"
           make -C "${CIRCLEHOME}/addon/SDCard"
+          make -C "${GITHUB_WORKSPACE}/front/rpi" clean
+          rm -rf "${GITHUB_WORKSPACE}"/lib/vxt/*.o "${GITHUB_WORKSPACE}"/lib/vxt/*.d
           make -C "${GITHUB_WORKSPACE}/front/rpi"
           cp "${GITHUB_WORKSPACE}/front/rpi/kernel7l.img" "${GITHUB_WORKSPACE}"
 
