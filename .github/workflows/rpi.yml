@@ -73,7 +73,6 @@ jobs:
           cp "${GITHUB_WORKSPACE}/front/rpi/kernel8-32.img" "${GITHUB_WORKSPACE}"
 
       - name: Build (RaspberryPi4)
-        shell: bash
         run: |
           export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-master"
           rm -rf "${CIRCLEHOME}"
@@ -81,7 +80,7 @@ jobs:
           unzip circle.zip
           cd "${CIRCLEHOME}"
           ./configure -r 4
-          ./makeall
+          RASPPI=4 ./makeall # Not sure why we have to force this?
           make -C "${CIRCLEHOME}/addon/fatfs"
           make -C "${CIRCLEHOME}/addon/SDCard"
           make -C "${GITHUB_WORKSPACE}/front/rpi"
