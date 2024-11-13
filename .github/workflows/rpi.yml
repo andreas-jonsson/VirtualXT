@@ -73,6 +73,7 @@ jobs:
           cp "${GITHUB_WORKSPACE}/front/rpi/kernel8-32.img" "${GITHUB_WORKSPACE}"
 
       - name: Build (RaspberryPi4)
+        shell: bash
         run: |
           export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-master"
           rm -rf "${CIRCLEHOME}"
