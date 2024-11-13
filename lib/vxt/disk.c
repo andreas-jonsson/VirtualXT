@@ -263,7 +263,7 @@ VXT_API vxt_error vxtu_disk_mount(struct vxt_peripheral *p, int num, void *fp) {
 
     int size = 0;
     if (c->intrf2.num_sectors) {
-		if ((size = c->intrf2.num_sectors(s, fp)) < 0)
+		if ((size = c->intrf2.num_sectors(s, fp) * VXTU_SECTOR_SIZE) < 0)
 			return VXT_USER_ERROR(2);
     } else {
 	    if (c->intrf.seek(s, fp, 0, VXTU_SEEK_END))

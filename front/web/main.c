@@ -42,8 +42,6 @@ int num_devices = 0;
 struct vxt_peripheral *devices[VXT_MAX_PERIPHERALS] = { NULL };
 #define APPEND_DEVICE(d) { devices[num_devices++] = (d); }
 
-int disk_head = 0;
-
 int cga_width = -1;
 int cga_height = -1;
 vxt_dword cga_border = 0;
@@ -71,63 +69,21 @@ static int log_wrapper(const char *fmt, ...) {
 	return n;
 }
 
-static int read_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
+static bool read_sector(vxt_system *s, void *fp, unsigned index, vxt_byte *buffer) {
 	(void)s; (void)fp;
-
-	int disk_sz = (int)js_disk_size();
-	if ((disk_head + size) > disk_sz)
-		size = disk_sz - disk_head;
-
-	js_disk_read(buffer, size, disk_head);
-	disk_head += size;
-	return size;
+	js_disk_read(buffer, VXTU_SECTOR_SIZE, (int)index * VXTU_SECTOR_SIZE);
+	return true;
 }
 
-static int write_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
+static bool write_sector(vxt_system *s, void *fp, unsigned index, const vxt_byte *buffer) {
 	(void)s; (void)fp;
-
-	int disk_sz = (int)js_disk_size();
-	if ((disk_head + size) > disk_sz)
-		size = disk_sz - disk_head;
-
-	js_disk_write(buffer, size, disk_head);
-	disk_head += size;
-	return size;
+	js_disk_write(buffer, VXTU_SECTOR_SIZE, (int)index * VXTU_SECTOR_SIZE);
+	return true;
 }
 
-static int seek_file(vxt_system *s, void *fp, int offset, enum vxtu_disk_seek whence) {
+static int num_sectors(vxt_system *s, void *fp) {
 	(void)s; (void)fp;
-
-	int disk_sz = (int)js_disk_size();
-	int pos = -1;
-
-	switch (whence) {
-		case VXTU_SEEK_START:
-			if ((pos = offset) > disk_sz)
-				return -1;
-			break;
-		case VXTU_SEEK_CURRENT:
-			pos = disk_head + offset;
-			if ((pos < 0) || (pos > disk_sz))
-				return -1;
-			break;
-		case VXTU_SEEK_END:
-			pos = disk_sz - offset;
-			if ((pos < 0) || (pos > disk_sz))
-				return -1;
-			break;
-		default:
-			LOG("Invalid seek!");
-			return -1;
-	}
-
-	disk_head = pos;
-	return 0;
-}
-
-static int tell_file(vxt_system *s, void *fp) {
-	(void)s; (void)fp;
-	return disk_head;
+	return (int)js_disk_size() / VXTU_SECTOR_SIZE;
 }
 
 static struct vxt_peripheral *load_bios(const vxt_byte *data, int size, vxt_pointer base) {
@@ -230,10 +186,10 @@ void *wasm_audio_sampler_memory_pointer(void) {
 void wasm_initialize_emulator(int freq, int afreq, int bsize) {
 	vxt_set_logger(&log_wrapper);
 
-	struct vxtu_disk_interface intrf = {
-		&read_file, &write_file, &seek_file, &tell_file
+	struct vxtu_disk_interface2 intrf = {
+		&read_sector, &write_sector, &num_sectors
 	};
-	struct vxt_peripheral *disk = vxtu_disk_create(&ALLOCATOR, &intrf);
+	struct vxt_peripheral *disk = vxtu_disk_create2(&ALLOCATOR, &intrf);
 	vxtu_disk_set_activity_callback(disk, &js_disk_activity, NULL);
 
 	ppi = vxtu_ppi_create(&ALLOCATOR);
