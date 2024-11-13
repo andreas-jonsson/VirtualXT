@@ -74,6 +74,8 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structvxtu__disk__interface.html">vxtu_disk_interface</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structvxtu__disk__interface2.html">vxtu_disk_interface2</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
@@ -89,6 +91,8 @@ Macros</h2></td></tr>
 <tr class="separator:a3fff8082902c9af3063b8d8cc3a37daa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9e056a6f11b996dcd8f34ba2dbbb2387"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a9e056a6f11b996dcd8f34ba2dbbb2387">vxtu_static_allocator</a>(name,  size)</td></tr>
 <tr class="separator:a9e056a6f11b996dcd8f34ba2dbbb2387"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae64145ceab07dc88898aa811b9966f57"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#ae64145ceab07dc88898aa811b9966f57">VXTU_SECTOR_SIZE</a>&#160;&#160;&#160;512</td></tr>
+<tr class="separator:ae64145ceab07dc88898aa811b9966f57"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
@@ -257,6 +261,8 @@ Functions</h2></td></tr>
 <tr class="separator:a2fa95da1df52e4e744e96b290922b941"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a40741bce1c4363651c22e384810fd7ca"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vxt_8h.html#aad167b1b5e0e0e81742dc83e84838cb0">VXT_API</a> struct vxt_peripheral *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a40741bce1c4363651c22e384810fd7ca">vxtu_disk_create</a> (<a class="el" href="vxt_8h.html#ac10b97a0ac675a0471f30c4432a64190">vxt_allocator</a> *alloc, const struct <a class="el" href="structvxtu__disk__interface.html">vxtu_disk_interface</a> *intrf)</td></tr>
 <tr class="separator:a40741bce1c4363651c22e384810fd7ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af0423e6ae8cc52c3ecc63246be449930"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vxt_8h.html#aad167b1b5e0e0e81742dc83e84838cb0">VXT_API</a> struct vxt_peripheral *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#af0423e6ae8cc52c3ecc63246be449930">vxtu_disk_create2</a> (<a class="el" href="vxt_8h.html#ac10b97a0ac675a0471f30c4432a64190">vxt_allocator</a> *alloc, const struct <a class="el" href="structvxtu__disk__interface2.html">vxtu_disk_interface2</a> *intrf)</td></tr>
+<tr class="separator:af0423e6ae8cc52c3ecc63246be449930"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae2fcccae85155f7c172053d0e45cea11"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vxt_8h.html#aad167b1b5e0e0e81742dc83e84838cb0">VXT_API</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#ae2fcccae85155f7c172053d0e45cea11">vxtu_disk_set_activity_callback</a> (struct vxt_peripheral *p, void(*cb)(int, void *), void *ud)</td></tr>
 <tr class="separator:ae2fcccae85155f7c172053d0e45cea11"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a44258b288017c9e52b113bf7ab581a11"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vxt_8h.html#aad167b1b5e0e0e81742dc83e84838cb0">VXT_API</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a44258b288017c9e52b113bf7ab581a11">vxtu_disk_set_boot_drive</a> (struct vxt_peripheral *p, int num)</td></tr>
@@ -417,6 +423,20 @@ Functions</h2></td></tr>
 <div class="line">}                                                           \</div>
 <div class="ttc" id="avxt_8h_html_a2236a1c7fabb4e887ef168a3e721fa08"><div class="ttname"><a href="vxt_8h.html#a2236a1c7fabb4e887ef168a3e721fa08">vxt_byte</a></div><div class="ttdeci">uint8_t vxt_byte</div><div class="ttdef"><b>Definition:</b> vxt.h:114</div></div>
 </div><!-- fragment -->
+</div>
+</div>
+<a id="ae64145ceab07dc88898aa811b9966f57"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae64145ceab07dc88898aa811b9966f57">&#9670;&nbsp;</a></span>VXTU_SECTOR_SIZE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define VXTU_SECTOR_SIZE&#160;&#160;&#160;512</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
 </div>
 </div>
 <a id="a9e056a6f11b996dcd8f34ba2dbbb2387"></a>
@@ -636,6 +656,34 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const struct <a class="el" href="structvxtu__disk__interface.html">vxtu_disk_interface</a> *&#160;</td>
+          <td class="paramname"><em>intrf</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="af0423e6ae8cc52c3ecc63246be449930"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af0423e6ae8cc52c3ecc63246be449930">&#9670;&nbsp;</a></span>vxtu_disk_create2()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="vxt_8h.html#aad167b1b5e0e0e81742dc83e84838cb0">VXT_API</a> struct vxt_peripheral* vxtu_disk_create2 </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="vxt_8h.html#ac10b97a0ac675a0471f30c4432a64190">vxt_allocator</a> *&#160;</td>
+          <td class="paramname"><em>alloc</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const struct <a class="el" href="structvxtu__disk__interface2.html">vxtu_disk_interface2</a> *&#160;</td>
           <td class="paramname"><em>intrf</em>&#160;</td>
         </tr>
         <tr>

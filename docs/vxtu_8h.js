@@ -3,11 +3,13 @@ var vxtu_8h =
     [ "vxtu_uart_registers", "structvxtu__uart__registers.html", "structvxtu__uart__registers" ],
     [ "vxtu_uart_interface", "structvxtu__uart__interface.html", "structvxtu__uart__interface" ],
     [ "vxtu_disk_interface", "structvxtu__disk__interface.html", "structvxtu__disk__interface" ],
+    [ "vxtu_disk_interface2", "structvxtu__disk__interface2.html", "structvxtu__disk__interface2" ],
     [ "VXTU_CAST", "vxtu_8h.html#a2642d0e1cf35d53d2ebc086ff230ba21", null ],
     [ "VXTU_MODULE_CREATE", "vxtu_8h.html#a5c5f3b5d5db9aebf398a733617e612ce", null ],
     [ "VXTU_MODULE_ENTRIES", "vxtu_8h.html#a94f02d7da3b95b3d2ba20d85e6dbd141", null ],
     [ "VXTU_MODULE_NAME_STRING", "vxtu_8h.html#a3fff8082902c9af3063b8d8cc3a37daa", null ],
     [ "vxtu_randomize", "vxtu_8h.html#a21d7ce948278da994dbac4bc6d419f20", null ],
+    [ "VXTU_SECTOR_SIZE", "vxtu_8h.html#ae64145ceab07dc88898aa811b9966f57", null ],
     [ "vxtu_static_allocator", "vxtu_8h.html#a9e056a6f11b996dcd8f34ba2dbbb2387", null ],
     [ "vxtu_module_entry_func", "vxtu_8h.html#aa00600fabee749ba47e8fe98fbcc5a93", null ],
     [ "vxtu_disk_seek", "vxtu_8h.html#a51e30675ddfde71aab800a8e7f6f8b8c", [
@@ -108,6 +110,7 @@ var vxtu_8h =
       [ "VXTU_SCAN_KP_DELETE", "vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa02dc620b739049ec3cc84d4aa6dc6b2", null ]
     ] ],
     [ "vxtu_disk_create", "vxtu_8h.html#a40741bce1c4363651c22e384810fd7ca", null ],
+    [ "vxtu_disk_create2", "vxtu_8h.html#af0423e6ae8cc52c3ecc63246be449930", null ],
     [ "vxtu_disk_mount", "vxtu_8h.html#ae514c5cb4e4e80b2e19ab07ccbcbc67d", null ],
     [ "vxtu_disk_set_activity_callback", "vxtu_8h.html#ae2fcccae85155f7c172053d0e45cea11", null ],
     [ "vxtu_disk_set_boot_drive", "vxtu_8h.html#a44258b288017c9e52b113bf7ab581a11", null ],
