@@ -213,8 +213,8 @@ struct vxtu_disk_interface {
 };
 
 struct vxtu_disk_interface2 {
-    bool (*read_sector)(vxt_system *s, void *fp, unsigned index, vxt_byte *buffer);
-	bool (*write_sector)(vxt_system *s, void *fp, unsigned index, const vxt_byte *buffer);
+	vxt_error (*read_sector)(vxt_system *s, void *fp, unsigned index, vxt_byte *buffer);
+	vxt_error (*write_sector)(vxt_system *s, void *fp, unsigned index, const vxt_byte *buffer);
 	int (*num_sectors)(vxt_system *s, void *fp);
 };
 

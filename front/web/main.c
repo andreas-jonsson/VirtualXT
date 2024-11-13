@@ -69,16 +69,16 @@ static int log_wrapper(const char *fmt, ...) {
 	return n;
 }
 
-static bool read_sector(vxt_system *s, void *fp, unsigned index, vxt_byte *buffer) {
+static vxt_error read_sector(vxt_system *s, void *fp, unsigned index, vxt_byte *buffer) {
 	(void)s; (void)fp;
 	js_disk_read(buffer, VXTU_SECTOR_SIZE, index * VXTU_SECTOR_SIZE);
-	return true;
+	return VXT_NO_ERROR;
 }
 
-static bool write_sector(vxt_system *s, void *fp, unsigned index, const vxt_byte *buffer) {
+static vxt_error write_sector(vxt_system *s, void *fp, unsigned index, const vxt_byte *buffer) {
 	(void)s; (void)fp;
 	js_disk_write(buffer, VXTU_SECTOR_SIZE, index * VXTU_SECTOR_SIZE);
-	return true;
+	return VXT_NO_ERROR;
 }
 
 static int num_sectors(vxt_system *s, void *fp) {

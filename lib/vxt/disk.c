@@ -69,14 +69,14 @@ static vxt_byte execute_operation(vxt_system *s, struct disk *c, vxt_byte dsk, b
 		struct vxtu_disk_interface2 *di = &c->intrf2;
 		while (num_sectors < count) {
 	        if (read) {
-	            if (!di->read_sector(s, dev->fp, lba, dev->buffer))
+	            if (di->read_sector(s, dev->fp, lba, dev->buffer) != VXT_NO_ERROR)
 	                break;
 	            for (int i = 0; i < VXTU_SECTOR_SIZE; i++)
 	                vxt_system_write_byte(s, addr++, dev->buffer[i]);
 	        } else {
 	            for (int i = 0; i < VXTU_SECTOR_SIZE; i++)
 	                dev->buffer[i] = vxt_system_read_byte(s, addr++);
-	            if (!di->write_sector(s, dev->fp, lba, dev->buffer))
+	            if (di->write_sector(s, dev->fp, lba, dev->buffer) != VXT_NO_ERROR)
 	                break;
 	        }
 	        num_sectors++;
@@ -316,21 +316,20 @@ VXT_API vxt_error vxtu_disk_mount(struct vxt_peripheral *p, int num, void *fp) {
 }
 
 VXT_API struct vxt_peripheral *vxtu_disk_create(vxt_allocator *alloc, const struct vxtu_disk_interface *intrf) VXT_PERIPHERAL_CREATE(alloc, disk, {
-    DEVICE->intrf = *intrf;	
-
-    PERIPHERAL->install = &install;
-    PERIPHERAL->reset = &reset;
-    PERIPHERAL->name = &name;
-    PERIPHERAL->io.in = &in;
-    PERIPHERAL->io.out = &out;
+	VXT_LOG("WARNING: 'vxtu_disk_interface' is deprecated!");
+	DEVICE->intrf = *intrf;	
+	PERIPHERAL->install = &install;
+	PERIPHERAL->reset = &reset;
+	PERIPHERAL->name = &name;
+	PERIPHERAL->io.in = &in;
+	PERIPHERAL->io.out = &out;
 })
 
 VXT_API struct vxt_peripheral *vxtu_disk_create2(vxt_allocator *alloc, const struct vxtu_disk_interface2 *intrf) VXT_PERIPHERAL_CREATE(alloc, disk, {
-    DEVICE->intrf2 = *intrf;
-
-    PERIPHERAL->install = &install;
-    PERIPHERAL->reset = &reset;
-    PERIPHERAL->name = &name;
-    PERIPHERAL->io.in = &in;
-    PERIPHERAL->io.out = &out;
+	DEVICE->intrf2 = *intrf;
+	PERIPHERAL->install = &install;
+	PERIPHERAL->reset = &reset;
+	PERIPHERAL->name = &name;
+	PERIPHERAL->io.in = &in;
+	PERIPHERAL->io.out = &out;
 })
