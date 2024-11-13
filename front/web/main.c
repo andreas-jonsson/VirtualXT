@@ -71,13 +71,13 @@ static int log_wrapper(const char *fmt, ...) {
 
 static bool read_sector(vxt_system *s, void *fp, unsigned index, vxt_byte *buffer) {
 	(void)s; (void)fp;
-	js_disk_read(buffer, VXTU_SECTOR_SIZE, (int)index * VXTU_SECTOR_SIZE);
+	js_disk_read(buffer, VXTU_SECTOR_SIZE, index * VXTU_SECTOR_SIZE);
 	return true;
 }
 
 static bool write_sector(vxt_system *s, void *fp, unsigned index, const vxt_byte *buffer) {
 	(void)s; (void)fp;
-	js_disk_write(buffer, VXTU_SECTOR_SIZE, (int)index * VXTU_SECTOR_SIZE);
+	js_disk_write(buffer, VXTU_SECTOR_SIZE, index * VXTU_SECTOR_SIZE);
 	return true;
 }
 
