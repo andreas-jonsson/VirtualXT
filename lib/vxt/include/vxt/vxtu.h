@@ -197,6 +197,8 @@ struct vxtu_uart_interface {
 	void *udata;
 };
 
+#define VXTU_SECTOR_SIZE 512
+
 enum vxtu_disk_seek {
     VXTU_SEEK_START		= 0x0,
 	VXTU_SEEK_CURRENT 	= 0x1,
@@ -208,6 +210,12 @@ struct vxtu_disk_interface {
 	int (*write)(vxt_system *s, void *fp, vxt_byte *buffer, int size);
 	int (*seek)(vxt_system *s, void *fp, int offset, enum vxtu_disk_seek whence);
 	int (*tell)(vxt_system *s, void *fp);
+};
+
+struct vxtu_disk_interface2 {
+    bool (*read_sector)(vxt_system *s, void *fp, unsigned index, vxt_byte *buffer);
+	bool (*write_sector)(vxt_system *s, void *fp, unsigned index, const vxt_byte *buffer);
+	int (*num_sectors)(vxt_system *s, void *fp);
 };
 
 VXT_API vxt_byte *vxtu_read_file(vxt_allocator *alloc, const char *file, int *size);
@@ -236,6 +244,7 @@ VXT_API void vxtu_mda_invalidate(struct vxt_peripheral *p);
 VXT_API int vxtu_mda_traverse(struct vxt_peripheral *p, int (*f)(int,vxt_byte,enum vxtu_mda_attrib,int,void*), void *userdata);
 
 VXT_API struct vxt_peripheral *vxtu_disk_create(vxt_allocator *alloc, const struct vxtu_disk_interface *intrf);
+VXT_API struct vxt_peripheral *vxtu_disk_create2(vxt_allocator *alloc, const struct vxtu_disk_interface2 *intrf);
 VXT_API void vxtu_disk_set_activity_callback(struct vxt_peripheral *p, void (*cb)(int,void*), void *ud);
 VXT_API void vxtu_disk_set_boot_drive(struct vxt_peripheral *p, int num);
 VXT_API vxt_error vxtu_disk_mount(struct vxt_peripheral *p, int num, void *fp);

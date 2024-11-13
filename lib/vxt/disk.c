@@ -21,7 +21,6 @@
 
 #include <vxt/vxtu.h>
 
-#define SECTOR_SIZE 512
 #define WAIT_STATES 1000
 
 struct drive {
@@ -29,7 +28,7 @@ struct drive {
     int size;
     bool is_hd;
 
-    vxt_byte buffer[SECTOR_SIZE];
+    vxt_byte buffer[VXTU_SECTOR_SIZE];
 
     vxt_word cylinders;
     vxt_word sectors;
@@ -41,6 +40,7 @@ struct drive {
 
 struct disk {
     struct vxtu_disk_interface intrf;
+    struct vxtu_disk_interface2 intrf2;
 
 	vxt_byte boot_drive;
     vxt_byte num_hd;
@@ -51,35 +51,55 @@ struct disk {
     struct drive disks[0x100];
 };
 
-static vxt_byte execute_operation(vxt_system *s, struct disk *c, vxt_byte disk, bool read, vxt_pointer addr,
+static vxt_byte execute_operation(vxt_system *s, struct disk *c, vxt_byte dsk, bool read, vxt_pointer addr,
     vxt_word cylinders, vxt_word sectors, vxt_word heads, vxt_byte count)
 {
     if (!sectors)
 	    return 0;
 
-    struct vxtu_disk_interface *di = &c->intrf;
-    struct drive *dev = &c->disks[disk];
-
-    int lba = ((int)cylinders * (int)dev->heads + (int)heads) * (int)dev->sectors + (int)sectors - 1;
-    if (di->seek(s, dev->fp, lba * SECTOR_SIZE, VXTU_SEEK_START))
-        return 0;
-    else if (c->activity_cb)
-        c->activity_cb((int)disk, c->activity_cb_data);
-
-    int num_sectors = 0;
-    while (num_sectors < count) {
-        if (read) {
-            if (di->read(s, dev->fp, dev->buffer, SECTOR_SIZE) != SECTOR_SIZE)
-                break;
-            for (int i = 0; i < SECTOR_SIZE; i++)
-                vxt_system_write_byte(s, addr++, dev->buffer[i]);
-        } else {
-            for (int i = 0; i < SECTOR_SIZE; i++)
-                dev->buffer[i] = vxt_system_read_byte(s, addr++);
-            if (di->write(s, dev->fp, dev->buffer, SECTOR_SIZE) != SECTOR_SIZE)
-                break;
-        }
-        num_sectors++;
+	int num_sectors = 0;
+	struct drive *dev = &c->disks[dsk];
+	int lba = ((int)cylinders * (int)dev->heads + (int)heads) * (int)dev->sectors + (int)sectors - 1;
+	
+    if (c->activity_cb) {
+        c->activity_cb((int)dsk, c->activity_cb_data);
+	}
+	
+	if (c->intrf2.num_sectors) {
+		struct vxtu_disk_interface2 *di = &c->intrf2;
+		while (num_sectors < count) {
+	        if (read) {
+	            if (!di->read_sector(s, dev->fp, lba, dev->buffer))
+	                break;
+	            for (int i = 0; i < VXTU_SECTOR_SIZE; i++)
+	                vxt_system_write_byte(s, addr++, dev->buffer[i]);
+	        } else {
+	            for (int i = 0; i < VXTU_SECTOR_SIZE; i++)
+	                dev->buffer[i] = vxt_system_read_byte(s, addr++);
+	            if (!di->write_sector(s, dev->fp, lba, dev->buffer))
+	                break;
+	        }
+	        num_sectors++;
+	    }
+	} else {
+	    struct vxtu_disk_interface *di = &c->intrf;
+	    if (di->seek(s, dev->fp, lba * VXTU_SECTOR_SIZE, VXTU_SEEK_START))
+	        return 0;
+	        
+	    while (num_sectors < count) {
+	        if (read) {
+	            if (di->read(s, dev->fp, dev->buffer, VXTU_SECTOR_SIZE) != VXTU_SECTOR_SIZE)
+	                break;
+	            for (int i = 0; i < VXTU_SECTOR_SIZE; i++)
+	                vxt_system_write_byte(s, addr++, dev->buffer[i]);
+	        } else {
+	            for (int i = 0; i < VXTU_SECTOR_SIZE; i++)
+	                dev->buffer[i] = vxt_system_read_byte(s, addr++);
+	            if (di->write(s, dev->fp, dev->buffer, VXTU_SECTOR_SIZE) != VXTU_SECTOR_SIZE)
+	                break;
+	        }
+	        num_sectors++;
+	    }
     }
 
     // NOTE: File interface must be flushed at this point!
@@ -242,13 +262,18 @@ VXT_API vxt_error vxtu_disk_mount(struct vxt_peripheral *p, int num, void *fp) {
         return c->disks[num & 0xFF].fp ? VXT_USER_ERROR(0) : VXT_NO_ERROR;
 
     int size = 0;
-    if (c->intrf.seek(s, fp, 0, VXTU_SEEK_END))
-        return VXT_USER_ERROR(1);
-    if ((size = c->intrf.tell(s, fp)) < 0)
-        return VXT_USER_ERROR(2);
-    if (c->intrf.seek(s, fp, 0, VXTU_SEEK_START))
-        return VXT_USER_ERROR(3);
-
+    if (c->intrf2.num_sectors) {
+		if ((size = c->intrf2.num_sectors(s, fp)) < 0)
+			return VXT_USER_ERROR(2);
+    } else {
+	    if (c->intrf.seek(s, fp, 0, VXTU_SEEK_END))
+	        return VXT_USER_ERROR(1);
+	    if ((size = c->intrf.tell(s, fp)) < 0)
+	        return VXT_USER_ERROR(2);
+	    if (c->intrf.seek(s, fp, 0, VXTU_SEEK_START))
+	        return VXT_USER_ERROR(3);
+	}
+	
     if ((size > 1474560) && (num < 0x80)) {
         VXT_LOG("Invalid harddrive number, expected 128+");
         return VXT_USER_ERROR(4);
@@ -291,7 +316,17 @@ VXT_API vxt_error vxtu_disk_mount(struct vxt_peripheral *p, int num, void *fp) {
 }
 
 VXT_API struct vxt_peripheral *vxtu_disk_create(vxt_allocator *alloc, const struct vxtu_disk_interface *intrf) VXT_PERIPHERAL_CREATE(alloc, disk, {
-    DEVICE->intrf = *intrf;
+    DEVICE->intrf = *intrf;	
+
+    PERIPHERAL->install = &install;
+    PERIPHERAL->reset = &reset;
+    PERIPHERAL->name = &name;
+    PERIPHERAL->io.in = &in;
+    PERIPHERAL->io.out = &out;
+})
+
+VXT_API struct vxt_peripheral *vxtu_disk_create2(vxt_allocator *alloc, const struct vxtu_disk_interface2 *intrf) VXT_PERIPHERAL_CREATE(alloc, disk, {
+    DEVICE->intrf2 = *intrf;
 
     PERIPHERAL->install = &install;
     PERIPHERAL->reset = &reset;

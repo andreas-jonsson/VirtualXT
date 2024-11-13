@@ -28,7 +28,7 @@ static struct vxt_peripheral *disk_create(vxt_allocator *alloc, void *frontend, 
     struct frontend_interface *fi = (struct frontend_interface*)frontend;
     if (!fi) return NULL;
 
-    struct vxt_peripheral *p = vxtu_disk_create(alloc, &fi->disk.di);
+	struct vxt_peripheral *p = fi->disk.di2.num_sectors ? vxtu_disk_create2(alloc, &fi->disk.di2) : vxtu_disk_create(alloc, &fi->disk.di);
     if (!p) return NULL;
 
     if (fi->set_disk_controller) {

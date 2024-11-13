@@ -134,6 +134,7 @@ struct frontend_disk_interface {
     void *userdata;
 	void (*activity_callback)(int num, void *userdata);
 	struct vxtu_disk_interface di;
+	struct vxtu_disk_interface2 di2;
 };
 
 struct frontend_interface {
