@@ -69,14 +69,14 @@ static vxt_byte execute_operation(vxt_system *s, struct disk *c, vxt_byte dsk, b
 		struct vxtu_disk_interface2 *di = &c->intrf2;
 		while (num_sectors < count) {
 	        if (read) {
-	            if (di->read_sector(s, dev->fp, lba, dev->buffer) != VXT_NO_ERROR)
+	            if (di->read_sector(s, dev->fp, lba++, dev->buffer) != VXT_NO_ERROR)
 	                break;
 	            for (int i = 0; i < VXTU_SECTOR_SIZE; i++)
 	                vxt_system_write_byte(s, addr++, dev->buffer[i]);
 	        } else {
 	            for (int i = 0; i < VXTU_SECTOR_SIZE; i++)
 	                dev->buffer[i] = vxt_system_read_byte(s, addr++);
-	            if (di->write_sector(s, dev->fp, lba, dev->buffer) != VXT_NO_ERROR)
+	            if (di->write_sector(s, dev->fp, lba++, dev->buffer) != VXT_NO_ERROR)
 	                break;
 	        }
 	        num_sectors++;
