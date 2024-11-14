@@ -91,8 +91,12 @@ Macros</h2></td></tr>
 <tr class="separator:a3fff8082902c9af3063b8d8cc3a37daa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9e056a6f11b996dcd8f34ba2dbbb2387"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a9e056a6f11b996dcd8f34ba2dbbb2387">vxtu_static_allocator</a>(name,  size)</td></tr>
 <tr class="separator:a9e056a6f11b996dcd8f34ba2dbbb2387"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0507a7e5502d836ebbc352b301dabbfd"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a0507a7e5502d836ebbc352b301dabbfd">VXTU_KEY_UP</a>(scan)&#160;&#160;&#160;((enum <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98f">vxtu_scancode</a>)((int)(scan) | VXTU_KEY_UP_MASK))</td></tr>
+<tr class="separator:a0507a7e5502d836ebbc352b301dabbfd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae64145ceab07dc88898aa811b9966f57"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#ae64145ceab07dc88898aa811b9966f57">VXTU_SECTOR_SIZE</a>&#160;&#160;&#160;512</td></tr>
 <tr class="separator:ae64145ceab07dc88898aa811b9966f57"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0da3d5641afec504282eab5db8e02fb0"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a0da3d5641afec504282eab5db8e02fb0">VXTU_MAX_SECTORS</a>&#160;&#160;&#160;(1024 * 16 * 63)</td></tr>
+<tr class="separator:a0da3d5641afec504282eab5db8e02fb0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
@@ -315,6 +319,38 @@ Functions</h2></td></tr>
           <td></td>
           <td>)</td>
           <td></td><td>&#160;&#160;&#160;( ((<a class="el" href="vxt_8h.html#a7962fbd94b626c926d9a1242024eb12a">VXT_PACK</a>(union { tin from; tout to; })){ .from = (in) }).to )</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a0507a7e5502d836ebbc352b301dabbfd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0507a7e5502d836ebbc352b301dabbfd">&#9670;&nbsp;</a></span>VXTU_KEY_UP</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define VXTU_KEY_UP</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">scan</td><td>)</td>
+          <td>&#160;&#160;&#160;((enum <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98f">vxtu_scancode</a>)((int)(scan) | VXTU_KEY_UP_MASK))</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a0da3d5641afec504282eab5db8e02fb0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0da3d5641afec504282eab5db8e02fb0">&#9670;&nbsp;</a></span>VXTU_MAX_SECTORS</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define VXTU_MAX_SECTORS&#160;&#160;&#160;(1024 * 16 * 63)</td>
         </tr>
       </table>
 </div><div class="memdoc">

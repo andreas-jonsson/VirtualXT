@@ -5,6 +5,8 @@ var vxtu_8h =
     [ "vxtu_disk_interface", "structvxtu__disk__interface.html", "structvxtu__disk__interface" ],
     [ "vxtu_disk_interface2", "structvxtu__disk__interface2.html", "structvxtu__disk__interface2" ],
     [ "VXTU_CAST", "vxtu_8h.html#a2642d0e1cf35d53d2ebc086ff230ba21", null ],
+    [ "VXTU_KEY_UP", "vxtu_8h.html#a0507a7e5502d836ebbc352b301dabbfd", null ],
+    [ "VXTU_MAX_SECTORS", "vxtu_8h.html#a0da3d5641afec504282eab5db8e02fb0", null ],
     [ "VXTU_MODULE_CREATE", "vxtu_8h.html#a5c5f3b5d5db9aebf398a733617e612ce", null ],
     [ "VXTU_MODULE_ENTRIES", "vxtu_8h.html#a94f02d7da3b95b3d2ba20d85e6dbd141", null ],
     [ "VXTU_MODULE_NAME_STRING", "vxtu_8h.html#a3fff8082902c9af3063b8d8cc3a37daa", null ],
