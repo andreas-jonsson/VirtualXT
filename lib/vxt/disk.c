@@ -241,7 +241,9 @@ VXT_API void vxtu_disk_set_activity_callback(struct vxt_peripheral *p, void (*cb
 }
 
 VXT_API void vxtu_disk_set_boot_drive(struct vxt_peripheral *p, int num) {
-    (VXT_GET_DEVICE(disk, p))->boot_drive = num & 0xFF;
+	num &= 0xFF;
+	VXT_LOG("Set boot drive: %d", num);
+    (VXT_GET_DEVICE(disk, p))->boot_drive = num;
 }
 
 VXT_API bool vxtu_disk_unmount(struct vxt_peripheral *p, int num) {

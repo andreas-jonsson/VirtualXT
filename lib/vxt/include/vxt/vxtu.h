@@ -171,7 +171,8 @@ enum vxtu_scancode {
 	VXTU_SCAN_KP_DELETE
 };
 
-static const enum vxtu_scancode VXTU_KEY_UP_MASK = 0x80;
+static const enum vxtu_scancode VXTU_KEY_UP_MASK = (enum vxtu_scancode)0x80;
+#define VXTU_KEY_UP(scan) ((enum vxtu_scancode)((int)(scan) | VXTU_KEY_UP_MASK))
 
 enum vxtu_mda_attrib {
     VXTU_MDA_UNDELINE       = 0x1,

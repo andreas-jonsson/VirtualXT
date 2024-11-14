@@ -156,8 +156,8 @@ extern "C" {
 typedef enum {_VXT_ERROR_CODES(_VXT_ERROR_ENUM) _VXT_NUM_ERRORS} vxt_error;
 #undef _VXT_ERROR_ENUM
 
-#define VXT_USER_ERROR(e) ((vxt_error)(e) + _VXT_NUM_ERRORS)
-#define VXT_GET_USER_ERROR(e) ((vxt_error)(e) - _VXT_NUM_ERRORS)
+#define VXT_USER_ERROR(e) ((vxt_error)((int)e + _VXT_NUM_ERRORS))
+#define VXT_GET_USER_ERROR(e) ((vxt_error)((int)e - _VXT_NUM_ERRORS))
 
 typedef int vxt_timer_id;
 typedef struct system vxt_system;

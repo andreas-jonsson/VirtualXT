@@ -3,10 +3,9 @@ ifeq ($(CIRCLEHOME),)
 CIRCLEHOME = ../../../circle
 endif
 
-FLAGS_VXT = -DVXT_NO_LIBC -DFRONTEND_VIDEO_RED=2 -DFRONTEND_VIDEO_GREEN=1 -DFRONTEND_VIDEO_BLUE=0 -DFRONTEND_VIDEO_ALPHA=3 -I$(VXTHOME)/include -I../common
+LIBCHOME = $(VXTHOME)/../scanf
 
-CFLAGS = $(FLAGS_VXT)
-CPPFLAGS = -fpermissive $(FLAGS_VXT)
+CFLAGS = -DVXT_NO_LIBC -DFRONTEND_VIDEO_RED=2 -DFRONTEND_VIDEO_GREEN=1 -DFRONTEND_VIDEO_BLUE=0 -DFRONTEND_VIDEO_ALPHA=3 -I$(VXTHOME)/include -I../common
 
 OBJS_VXT = $(VXTHOME)/cpu.o \
 	$(VXTHOME)/disk.o \
@@ -19,7 +18,10 @@ OBJS_VXT = $(VXTHOME)/cpu.o \
 	$(VXTHOME)/system.o \
 	$(VXTHOME)/uart.o
 
-OBJS_LIBC = $(VXTHOME)/../scanf/scanf.o
+EXTRACLEAN = $(VXTHOME)/*.o $(VXTHOME)/*.d
+
+OBJS_LIBC = $(LIBCHOME)/scanf.o
+EXTRACLEAN += $(LIBCHOME)/*.o $(LIBCHOME)/*.d
 
 OBJS = main.o kernel.o ethernet.o cga.o mouse.o $(OBJS_VXT) $(OBJS_LIBC)
 

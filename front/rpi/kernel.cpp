@@ -31,7 +31,9 @@
 #include "keymap.h"
 
 volatile bool mouse_updated = false;
-volatile struct frontend_mouse_event mouse_state = {0};
+struct frontend_mouse_event mouse_state;
+
+unsigned cpu_frequency = VXT_DEFAULT_FREQUENCY;
 
 int screen_width = 0;
 int screen_height = 0;
@@ -45,14 +47,12 @@ volatile int pUMSD1_head = 0;
 
 FIL log_file = {0};
 
-#define LOGFILE "virtualxt.log"
-//#define LOGDEV
+//#define LOGSERIAL
 
 #define DRIVE "SD:"
 #define FLOPPYIMAGE "A.img"
 #define DISKIMAGE "C.img"
 #define BIOSIMAGE "GLABIOS.ROM"
-#define CPU_FREQUENCY VXT_DEFAULT_FREQUENCY
 #define SAMPLE_RATE	48000
 
 extern "C" {
@@ -81,7 +81,6 @@ extern "C" {
 		return np;
 	}
 
-#ifdef LOGFILE
 	static int file_logger(const char *fmt, ...) {
 		va_list alist;
 		va_start(alist, fmt);
@@ -94,9 +93,8 @@ extern "C" {
 		va_end(alist);
 		return 0; // Not correct but it will have to do for now.
 	}
-#endif
 
-#ifdef LOGDEV
+#ifdef LOGSERIAL
 	static int dev_logger(const char *fmt, ...) {
 		va_list alist;
 		va_start(alist, fmt);
@@ -150,7 +148,7 @@ extern "C" {
 		return (out == VXTU_SECTOR_SIZE) ? VXT_NO_ERROR : VXT_USER_ERROR(4);
 	}
 
-	static vxt_error write_sector(vxt_system *s, void *fp, unsigned index, vxt_byte *buffer) {
+	static vxt_error write_sector(vxt_system *s, void *fp, unsigned index, const vxt_byte *buffer) {
 		(void)s;
 		if (fp == pUMSD1) {
 			if (pUMSD1->Seek(index * VXTU_SECTOR_SIZE) < 0)
@@ -243,6 +241,7 @@ CKernel::CKernel(void)
 	if (!pFrameBuffer->Initialize())
 		delete pFrameBuffer;
 
+	memset(&mouse_state, 0, sizeof(mouse_state));
 	memset(m_RawKeys, 0, sizeof(m_RawKeys));
 	s_pThis = this;
 }
@@ -255,10 +254,10 @@ CKernel::~CKernel(void) {
 
 boolean CKernel::Initialize(void) {
 	boolean bOK = TRUE;
-	if (bOK)
-		bOK = m_Serial.Initialize(115200);
+	#ifdef LOGSERIAL
+		if (bOK)
+			bOK = m_Serial.Initialize(115200);
 
-	#ifdef LOGDEV
 		if (bOK)
 			bOK = m_Logger.Initialize(m_DeviceNameService.GetDevice(m_Options.GetLogDevice(), FALSE));
 	#endif
@@ -290,7 +289,7 @@ TShutdownMode CKernel::Run(void) {
 	struct vxt_peripheral *cga = NULL;
 	//struct vxt_peripheral *joystick = NULL;
 
-	#ifdef LOGDEV
+	#ifdef LOGSERIAL
 		vxt_set_logger(&dev_logger);
 	#endif
 
@@ -308,11 +307,12 @@ TShutdownMode CKernel::Run(void) {
 		}
 	}
 
-	#ifdef LOGFILE
-		if (f_open(&log_file, DRIVE LOGFILE, FA_WRITE|FA_CREATE_ALWAYS) == FR_OK)
+	#ifndef LOGSERIAL
+		const char *log_file_name = m_Options.GetAppOptionString("LOGFILE");
+		if (log_file_name && (f_open(&log_file, log_file_name, FA_WRITE|FA_CREATE_ALWAYS) == FR_OK))
 			vxt_set_logger(&file_logger);
 	#endif
-
+	
 	bool has_floppy = true;
 	FIL floppy_file;
 	if (f_open(&floppy_file, DRIVE FLOPPYIMAGE, FA_READ|FA_WRITE|FA_OPEN_EXISTING) != FR_OK) {
@@ -369,7 +369,10 @@ TShutdownMode CKernel::Run(void) {
 		NULL
 	};
 
-	vxt_system *s = vxt_system_create(&allocator, CPU_FREQUENCY, devices);
+	cpu_frequency = m_Options.GetAppOptionDecimal("CPUFREQ", cpu_frequency);
+	VXT_LOG("CPU frequency: %02fMHz", (double)cpu_frequency / 1000000.0);
+	
+	vxt_system *s = vxt_system_create(&allocator, (int)cpu_frequency, devices);
 	if (!s) {
 		VXT_LOG("Could not create system!");
 		return (m_ShutdownMode = ShutdownHalt);
@@ -392,7 +395,9 @@ TShutdownMode CKernel::Run(void) {
 	if (has_floppy) vxtu_disk_mount(disk, 0, &floppy_file);
 	if (has_hd) vxtu_disk_mount(disk, next_hd++, &hd_file);
 	if (pUMSD1) vxtu_disk_mount(disk, next_hd++, pUMSD1);
-	vxtu_disk_set_boot_drive(disk, has_floppy ? 0 : 128);
+
+	int boot_drive = (int)m_Options.GetAppOptionDecimal("BOOT", has_floppy ? 0 : 128);
+	vxtu_disk_set_boot_drive(disk, boot_drive);
 	
 	VXT_LOG("CPU reset!");
 	vxt_system_reset(s);
@@ -400,7 +405,7 @@ TShutdownMode CKernel::Run(void) {
 	assert(CLOCKHZ == 1000000);
 	u64 renderTicks = CTimer::GetClockTicks64();
 	u64 audioTicks = renderTicks;
-	u64 vCpuTicks = renderTicks * (CPU_FREQUENCY / 1000000);
+	u64 vCpuTicks = renderTicks * (cpu_frequency / 1000000);
 	
 	while (m_ShutdownMode == ShutdownNone) {
 		m_CPUThrottle.Update();
@@ -449,10 +454,10 @@ TShutdownMode CKernel::Run(void) {
 			}			
 		}
 
-		u64	cpuTicks = ticks * (CPU_FREQUENCY / 1000000);
+		u64	cpuTicks = ticks * (cpu_frequency / 1000000);
 		if (vCpuTicks < cpuTicks) {
 			u64 dtics = cpuTicks - vCpuTicks;
-			struct vxt_step step = vxt_system_step(s, (dtics > CPU_FREQUENCY) ? CPU_FREQUENCY : dtics);
+			struct vxt_step step = vxt_system_step(s, (dtics > cpu_frequency) ? cpu_frequency : dtics);
 			if (step.err != VXT_NO_ERROR)
 				VXT_LOG(vxt_error_str(step.err));
 			vCpuTicks += step.cycles;
@@ -483,7 +488,7 @@ void CKernel::KeyStatusHandlerRaw(unsigned char ucModifiers, const unsigned char
 		} else if (was_pressed && !is_pressed) {
 			scan = modifierToXT[i];
 			if (scan != VXTU_SCAN_INVALID)
-				scan |= VXTU_KEY_UP_MASK;
+				scan = VXTU_KEY_UP(scan);
 		}
 
 		if (scan != VXTU_SCAN_INVALID)
@@ -502,7 +507,7 @@ void CKernel::KeyStatusHandlerRaw(unsigned char ucModifiers, const unsigned char
 
 			enum vxtu_scancode scan = usbToXT[RawKeys[i]];
 			if (!found && scan != VXTU_SCAN_INVALID)
-				vxtu_ppi_key_event(ppi, scan | VXTU_KEY_UP_MASK, false);
+				vxtu_ppi_key_event(ppi, VXTU_KEY_UP(scan), false);
 		}
 	}
 
