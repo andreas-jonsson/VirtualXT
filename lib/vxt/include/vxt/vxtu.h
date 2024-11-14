@@ -198,6 +198,7 @@ struct vxtu_uart_interface {
 };
 
 #define VXTU_SECTOR_SIZE 512
+#define VXTU_MAX_SECTORS (1024 * 16 * 63)
 
 enum vxtu_disk_seek {
     VXTU_SEEK_START		= 0x0,

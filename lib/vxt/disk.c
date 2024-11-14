@@ -273,6 +273,11 @@ VXT_API vxt_error vxtu_disk_mount(struct vxt_peripheral *p, int num, void *fp) {
 	    if (c->intrf.seek(s, fp, 0, VXTU_SEEK_START))
 	        return VXT_USER_ERROR(3);
 	}
+
+	if (size > (VXTU_MAX_SECTORS * VXTU_SECTOR_SIZE)) {
+		VXT_LOG("WARNING: Disk has too many sectors!");
+		size = VXTU_MAX_SECTORS * VXTU_SECTOR_SIZE;
+	}
 	
     if ((size > 1474560) && (num < 0x80)) {
         VXT_LOG("Invalid harddrive number, expected 128+");

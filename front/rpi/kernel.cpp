@@ -51,7 +51,6 @@ FIL log_file = {0};
 #define DRIVE "SD:"
 #define FLOPPYIMAGE "A.img"
 #define DISKIMAGE "C.img"
-#define MAX_DISKSIZE (1024 * 16 * 63 * 512)
 #define BIOSIMAGE "GLABIOS.ROM"
 #define CPU_FREQUENCY VXT_DEFAULT_FREQUENCY
 #define SAMPLE_RATE	48000
@@ -364,7 +363,7 @@ TShutdownMode CKernel::Run(void) {
 		ethernet_create(&allocator),
 		(ppi = vxtu_ppi_create(&allocator)),
 		(cga = cga_create(&allocator)),
-		(disk = vxtu_disk_create(&allocator, &intrf)),
+		(disk = vxtu_disk_create2(&allocator, &intrf)),
 		(mouse = mouse_create(&allocator, NULL, "0x3F8")),
 		//(joystick = joystick_create(&allocator, NULL, "0x201")),
 		NULL
