@@ -50,8 +50,6 @@ FIL log_file = {0};
 //#define LOGSERIAL
 
 #define DRIVE "SD:"
-#define FLOPPYIMAGE "A.img"
-#define DISKIMAGE "C.img"
 #define BIOSIMAGE "GLABIOS.ROM"
 #define SAMPLE_RATE	48000
 
@@ -235,7 +233,8 @@ CKernel::CKernel(void)
 	m_pKeyboard(0),
 	m_ShutdownMode(ShutdownNone),
 	m_pSound(0),
-	m_Modifiers(0){
+	m_Modifiers(0)
+{
 	// Initialize here to clear screen during boot.
 	pFrameBuffer = new CBcmFrameBuffer(m_Options.GetWidth(), m_Options.GetHeight(), 32);
 	if (!pFrameBuffer->Initialize())
@@ -315,15 +314,15 @@ TShutdownMode CKernel::Run(void) {
 	
 	bool has_floppy = true;
 	FIL floppy_file;
-	if (f_open(&floppy_file, DRIVE FLOPPYIMAGE, FA_READ|FA_WRITE|FA_OPEN_EXISTING) != FR_OK) {
+	if (f_open(&floppy_file, m_Options.GetAppOptionString("FD", "A.img"), FA_READ|FA_WRITE|FA_OPEN_EXISTING) != FR_OK) {
 		has_floppy = false;
-		VXT_LOG("Cannot open floppy image: %s", FLOPPYIMAGE);
+		VXT_LOG("Cannot open floppy image!");
 	}
 
 	bool has_hd = true;
 	FIL hd_file;
-	if (f_open(&hd_file, DRIVE DISKIMAGE, FA_READ|FA_WRITE|FA_OPEN_EXISTING) != FR_OK) {
-		VXT_LOG("Cannot open harddrive image: %s", DISKIMAGE);
+	if (f_open(&hd_file, m_Options.GetAppOptionString("HD", "C.img"), FA_READ|FA_WRITE|FA_OPEN_EXISTING) != FR_OK) {
+		VXT_LOG("Cannot open harddrive image!");
 		has_hd = false;
 	}
 
@@ -354,8 +353,8 @@ TShutdownMode CKernel::Run(void) {
 
 	struct vxt_peripheral *devices[] = {
 		vxtu_memory_create(&allocator, 0x0, 0x100000, false),
-		load_bios(DRIVE BIOSIMAGE, 0xFE000),
-		load_bios(DRIVE "vxtx.bin", 0xE0000),
+		load_bios(BIOSIMAGE, 0xFE000),
+		load_bios("vxtx.bin", 0xE0000),
 		vxtu_uart_create(&allocator, 0x3F8, 4),
 		vxtu_pic_create(&allocator),
 		vxtu_dma_create(&allocator),
