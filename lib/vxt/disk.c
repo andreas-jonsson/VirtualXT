@@ -183,11 +183,11 @@ static void out(struct disk *c, vxt_word port, vxt_byte data) {
                         r->ah = 0xAA;
                         r->flags |= VXT_CARRY;
                     } else {
-                        r->ah = 0;
+                        r->ax = 0;
                         r->flags &= ~VXT_CARRY;
-                        r->ch = (vxt_byte)d->cylinders - 1;
-                        r->cl = (vxt_byte)((d->sectors & 0x3F) + (d->cylinders / 256) * 64);
-                        r->dh = (vxt_byte)d->heads - 1;
+                        r->ch = (vxt_byte)((d->cylinders - 1) & 0xFF);
+                        r->cl = (vxt_byte)(((d->cylinders - 1) >> 2) & 0xC0) | (d->sectors & 0x3F);
+                        r->dh = (vxt_byte)(d->heads - 1);
 
                         if (r->dl < 0x80) {
                             r->bl = 4;

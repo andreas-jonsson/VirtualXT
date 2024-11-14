@@ -123,82 +123,55 @@ extern "C" {
 	}
 #endif
 
-	static int tell_file(vxt_system *s, void *fp) {
+	static int num_sectors(vxt_system *s, void *fp) {
 		(void)s;
-		return (fp == pUMSD1) ? pUMSD1_head : (int)f_tell((FIL*)fp);
+		return ((fp == pUMSD1) ? pUMSD1->GetSize() : f_size((FIL*)fp)) / VXTU_SECTOR_SIZE;
 	}
 
-	static int read_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
-		(void)s;
-		if (fp == pUMSD1) {			
-			if (pUMSD1->Seek(pUMSD1_head) < 0)
-				return -1;
-			int n = pUMSD1->Read(buffer, size);
-			if (n < 0)
-				return n;
-			return (pUMSD1_head += n);
-		}
-		
-		UINT out = 0;
-		if (f_read((FIL*)fp, buffer, (UINT)size, &out) != FR_OK)
-			return -1;
-		return (int)out;
-	}
-
-	static int write_file(vxt_system *s, void *fp, vxt_byte *buffer, int size) {
+	static vxt_error read_sector(vxt_system *s, void *fp, unsigned index, vxt_byte *buffer) {
 		(void)s;
 		if (fp == pUMSD1) {
-			if (pUMSD1->Seek(pUMSD1_head) < 0)
-				return -1;
-			int n = pUMSD1->Write(buffer, size);
-			if (n < 0)
-				return n;
-			return (pUMSD1_head += n);
+			if (pUMSD1->Seek(index * VXTU_SECTOR_SIZE) < 0)
+				return VXT_USER_ERROR(0);
+
+			DMA_BUFFER(vxt_byte, temp, VXTU_SECTOR_SIZE);
+			if (pUMSD1->Read(temp, VXTU_SECTOR_SIZE) != VXTU_SECTOR_SIZE)
+				return VXT_USER_ERROR(1);
+
+			memcpy(buffer, temp, VXTU_SECTOR_SIZE);
+			return VXT_NO_ERROR;
 		}
+
+		if (f_lseek((FIL*)fp, (FSIZE_t)index * VXTU_SECTOR_SIZE) != FR_OK)
+			return VXT_USER_ERROR(2);
 		
 		UINT out = 0;
-		if (f_write((FIL*)fp, buffer, (UINT)size, &out) != FR_OK)
-			return -1;
+		if (f_read((FIL*)fp, buffer, VXTU_SECTOR_SIZE, &out) != FR_OK)
+			return VXT_USER_ERROR(3);
+		return (out == VXTU_SECTOR_SIZE) ? VXT_NO_ERROR : VXT_USER_ERROR(4);
+	}
+
+	static vxt_error write_sector(vxt_system *s, void *fp, unsigned index, vxt_byte *buffer) {
+		(void)s;
+		if (fp == pUMSD1) {
+			if (pUMSD1->Seek(index * VXTU_SECTOR_SIZE) < 0)
+				return VXT_USER_ERROR(0);
 			
-		f_sync((FIL*)fp);
-		return (int)out;
-	}
+			DMA_BUFFER(vxt_byte, temp, VXTU_SECTOR_SIZE);
+			memcpy(temp, buffer, VXTU_SECTOR_SIZE);
 
-	static int seek_file(vxt_system *s, void *fp, int offset, enum vxtu_disk_seek whence) {
-		(void)s;
-		u64 sz = (fp == pUMSD1) ? pUMSD1->GetSize() : f_size((FIL*)fp);
-		if (sz > MAX_DISKSIZE)
-			sz = MAX_DISKSIZE;
-
-		int disk_head = tell_file(s, fp);
-		int disk_sz = (int)sz;
-		int pos = -1;
-
-		switch (whence) {
-			case VXTU_SEEK_START:
-				if ((pos = offset) > disk_sz)
-					return -1;
-				break;
-			case VXTU_SEEK_CURRENT:
-				pos = disk_head + offset;
-				if ((pos < 0) || (pos > disk_sz))
-					return -1;
-				break;
-			case VXTU_SEEK_END:
-				pos = disk_sz - offset;
-				if ((pos < 0) || (pos > disk_sz))
-					return -1;
-				break;
-			default:
-				VXT_LOG("Invalid seek!");
-				return -1;
+			return (pUMSD1->Write(temp, VXTU_SECTOR_SIZE) == VXTU_SECTOR_SIZE) ? VXT_NO_ERROR : VXT_USER_ERROR(1);
 		}
 
-		if (fp == pUMSD1) {
-			pUMSD1_head = pos;
-			return 0;
-		}
-		return (f_lseek((FIL*)fp, (FSIZE_t)pos) == FR_OK) ? 0 : -1;
+		if (f_lseek((FIL*)fp, (FSIZE_t)index * VXTU_SECTOR_SIZE) != FR_OK)
+			return VXT_USER_ERROR(2);
+
+		UINT out = 0;
+		if (f_write((FIL*)fp, buffer, VXTU_SECTOR_SIZE, &out) != FR_OK)
+			return VXT_USER_ERROR(3);
+		if (out != VXTU_SECTOR_SIZE)
+			return VXT_USER_ERROR(4);
+		return (f_sync((FIL*)fp) == FR_OK) ? VXT_NO_ERROR : VXT_USER_ERROR(5);
 	}
 
 	static struct vxt_peripheral *load_bios(const char *filename, vxt_pointer base) {
@@ -376,8 +349,8 @@ TShutdownMode CKernel::Run(void) {
 		VXT_LOG("No supported audio device!");
 	}
 	
-	struct vxtu_disk_interface intrf = {
-		&read_file, &write_file, &seek_file, &tell_file
+	struct vxtu_disk_interface2 intrf = {
+		&read_sector, &write_sector, &num_sectors
 	};
 
 	struct vxt_peripheral *devices[] = {
