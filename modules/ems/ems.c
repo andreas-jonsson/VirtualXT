@@ -85,6 +85,7 @@ static vxt_error config(struct ems *m, const char *section, const char *key, con
 }
 
 static struct vxt_peripheral *create(vxt_allocator *alloc, void *frontend, const char *args) VXT_PERIPHERAL_CREATE(alloc, ems, {
+	(void)frontend;
     if (strcmp(args, "lotech_ems"))
         return NULL;
 
