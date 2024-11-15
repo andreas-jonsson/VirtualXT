@@ -19,11 +19,9 @@
 // 3. This notice may not be removed or altered from any source
 //    distribution.
 
-#include "../../modules/cga/cga.c"
+#include "../../lib/scanf/scanf.h"
+#include "../../modules/ems/ems.c"
 
-struct vxt_peripheral *cga_card_create(vxt_allocator *alloc, struct frontend_video_adapter *va) {
-    struct vxt_peripheral *p = cga_create(alloc);
-    if (p)
-		*va = (struct frontend_video_adapter){p, &cga_border_color, &cga_snapshot, &cga_render};
-    return p;
+struct vxt_peripheral *ems_create(vxt_allocator *alloc, const char *args) {
+    return create(alloc, NULL, args);
 }

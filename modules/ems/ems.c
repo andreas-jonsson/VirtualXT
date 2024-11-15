@@ -84,8 +84,8 @@ static vxt_error config(struct ems *m, const char *section, const char *key, con
     return VXT_NO_ERROR;
 }
 
-VXTU_MODULE_CREATE(ems, {
-    if (strcmp(ARGS, "lotech_ems"))
+static struct vxt_peripheral *create(vxt_allocator *alloc, void *frontend, const char *args) VXT_PERIPHERAL_CREATE(alloc, ems, {
+    if (strcmp(args, "lotech_ems"))
         return NULL;
 
     vxtu_randomize(DEVICE->mem, MEMORY_SIZE, (intptr_t)PERIPHERAL);
@@ -101,3 +101,4 @@ VXTU_MODULE_CREATE(ems, {
     PERIPHERAL->io.in = &in;
     PERIPHERAL->io.out = &out;
 })
+VXTU_MODULE_ENTRIES(&create)

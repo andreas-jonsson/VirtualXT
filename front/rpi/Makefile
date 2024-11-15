@@ -16,14 +16,15 @@ OBJS_VXT = $(VXTHOME)/cpu.o \
 	$(VXTHOME)/pit.o \
 	$(VXTHOME)/ppi.o \
 	$(VXTHOME)/system.o \
-	$(VXTHOME)/uart.o
+	$(VXTHOME)/uart.o \
+	$(VXTHOME)/utils.o
 
 EXTRACLEAN = $(VXTHOME)/*.o $(VXTHOME)/*.d
 
 OBJS_LIBC = $(LIBCHOME)/scanf.o
 EXTRACLEAN += $(LIBCHOME)/*.o $(LIBCHOME)/*.d
 
-OBJS = main.o kernel.o ethernet.o cga.o mouse.o $(OBJS_VXT) $(OBJS_LIBC)
+OBJS = main.o kernel.o ethernet.o cga.o mouse.o ems.o vga.o $(OBJS_VXT) $(OBJS_LIBC)
 
 LIBS = $(CIRCLEHOME)/lib/usb/libusb.a \
 	$(CIRCLEHOME)/lib/sound/libsound.a \

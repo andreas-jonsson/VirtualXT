@@ -32,6 +32,7 @@
 
 volatile bool mouse_updated = false;
 struct frontend_mouse_event mouse_state;
+struct frontend_video_adapter video_adapter;
 
 unsigned cpu_frequency = VXT_DEFAULT_FREQUENCY;
 
@@ -54,8 +55,6 @@ FIL log_file = {0};
 #define SAMPLE_RATE	48000
 
 extern "C" {
-	#include "../../modules/cga/cga.h"
-
 	// From joystick.c
 	bool joystick_push_event(struct vxt_peripheral *p, const struct frontend_joystick_event *ev);
 	struct vxt_peripheral *joystick_create(vxt_allocator *alloc, void *frontend, const char *args);
@@ -67,6 +66,16 @@ extern "C" {
 	// From ethernet.cpp
 	struct vxt_peripheral *ethernet_create(vxt_allocator *alloc);
 
+	// From ems.c
+	struct vxt_peripheral *ems_create(vxt_allocator *alloc, const char *args);
+
+	// From cga.c
+	struct vxt_peripheral *cga_card_create(vxt_allocator *alloc, struct frontend_video_adapter *va);
+
+	// From vga.c
+	struct vxt_peripheral *vga_card_create(vxt_allocator *alloc, struct frontend_video_adapter *va);
+	struct vxt_peripheral *vga_bios_create(vxt_allocator *alloc, const char *args);
+
 	static void *allocator(void *ptr, size_t sz) {
 		if (!sz) {
 			if (ptr)
@@ -77,6 +86,14 @@ extern "C" {
 		if (ptr)
 			memcpy(np, ptr, sz);
 		return np;
+	}
+
+	int getch_(void) {
+		return 0;
+	}
+
+	void ungetch_(int ch) {
+		(void)ch;
 	}
 
 	static int file_logger(const char *fmt, ...) {
@@ -241,6 +258,7 @@ CKernel::CKernel(void)
 		delete pFrameBuffer;
 
 	memset(&mouse_state, 0, sizeof(mouse_state));
+	memset(&video_adapter, 0, sizeof(video_adapter));
 	memset(m_RawKeys, 0, sizeof(m_RawKeys));
 	s_pThis = this;
 }
@@ -285,7 +303,6 @@ boolean CKernel::Initialize(void) {
 
 TShutdownMode CKernel::Run(void) {
 	struct vxt_peripheral *disk = NULL;
-	struct vxt_peripheral *cga = NULL;
 	//struct vxt_peripheral *joystick = NULL;
 
 	#ifdef LOGSERIAL
@@ -346,10 +363,13 @@ TShutdownMode CKernel::Run(void) {
 	} else {
 		VXT_LOG("No supported audio device!");
 	}
-	
+
 	struct vxtu_disk_interface2 intrf = {
 		&read_sector, &write_sector, &num_sectors
 	};
+
+	const bool use_cga = m_Options.GetAppOptionDecimal("CGA", 0) != 0;
+	VXT_LOG("Video adapter: %s", use_cga ? "CGA" : "VGA");
 
 	struct vxt_peripheral *devices[] = {
 		vxtu_memory_create(&allocator, 0x0, 0x100000, false),
@@ -360,11 +380,13 @@ TShutdownMode CKernel::Run(void) {
 		vxtu_dma_create(&allocator),
 		vxtu_pit_create(&allocator),
 		ethernet_create(&allocator),
+		ems_create(&allocator, "lotech_ems"),
 		(ppi = vxtu_ppi_create(&allocator)),
-		(cga = cga_create(&allocator)),
 		(disk = vxtu_disk_create2(&allocator, &intrf)),
 		(mouse = mouse_create(&allocator, NULL, "0x3F8")),
 		//(joystick = joystick_create(&allocator, NULL, "0x201")),
+		use_cga ? cga_card_create(&allocator, &video_adapter) : vga_card_create(&allocator, &video_adapter),
+		use_cga ? NULL : load_bios("vgabios.bin", 0xC0000),
 		NULL
 	};
 
@@ -376,6 +398,8 @@ TShutdownMode CKernel::Run(void) {
 		VXT_LOG("Could not create system!");
 		return (m_ShutdownMode = ShutdownHalt);
 	}
+
+	vxt_system_configure(s, "lotech_ems", "memory", "0xD0000");
 	
 	vxt_error err = vxt_system_initialize(s);
 	if (err != VXT_NO_ERROR) {
@@ -441,8 +465,8 @@ TShutdownMode CKernel::Run(void) {
 				mouse_updated = false;
 			}
 
-			cga_snapshot(cga);
-	    	cga_render(cga, &render_callback, &m_Options);
+			video_adapter.snapshot(video_adapter.device);
+	    	video_adapter.render(video_adapter.device, &render_callback, &m_Options);
 		}
 
 		if ((ticks - audioTicks) >= (CLOCKHZ / SAMPLE_RATE)) {

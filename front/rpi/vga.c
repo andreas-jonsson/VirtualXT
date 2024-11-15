@@ -19,11 +19,13 @@
 // 3. This notice may not be removed or altered from any source
 //    distribution.
 
-#include "../../modules/cga/cga.c"
+#include "../../modules/vga/vga.c"
 
-struct vxt_peripheral *cga_card_create(vxt_allocator *alloc, struct frontend_video_adapter *va) {
-    struct vxt_peripheral *p = cga_create(alloc);
+struct vxt_peripheral *vga_card_create(vxt_allocator *alloc, struct frontend_video_adapter *va) {
+    struct vxt_peripheral *p = vga_create(alloc, NULL, NULL);
     if (p)
-		*va = (struct frontend_video_adapter){p, &cga_border_color, &cga_snapshot, &cga_render};
-    return p;
+		*va = (struct frontend_video_adapter){p, &border_color, &snapshot, &render};
+	if (0)
+		bios_create(NULL, NULL, NULL);
+	return p;
 }
