@@ -89,6 +89,7 @@ static const char *name(struct adlib *a) {
 }
 
 static struct vxt_peripheral *create(vxt_allocator *alloc, void *frontend, const char *args) VXT_PERIPHERAL_CREATE(alloc, adlib, {
+	(void)args;
 	if (frontend)
 		DEVICE->set_audio_adapter = ((struct frontend_interface*)frontend)->set_audio_adapter;
 
