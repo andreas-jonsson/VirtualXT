@@ -11,12 +11,10 @@ in DOS to ensure the correct size and format when using a USB drive.
 Ethernet support should work but is not well tested. Run the ETHERNET.BAT
 file on the included disk image to load drivers and launch DHCP server.
 
-Known issus:
-  * Audio is not working atm. :(
-  * Keyboard has issues at times.
-  * Old USB mouses have been known to lockup the system when connected. 
+If you get stuck with a black screen during boot, try enable logging and
+detatch all USB devices including mouse and keyboard.
 
-VirtualXT specific options in cmdline.txt are:
+VirtualXT specific options in cmdline.txt:
   BOOT=<set boot device, BIOS disk id>
   FD=<floppy image on SDCard>
   HD=<harddrive image on SDCard>
