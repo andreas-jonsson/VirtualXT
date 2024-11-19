@@ -162,7 +162,7 @@ workspace "virtualxt"
 
                 cleancommands {
                     "{RMFILE} modules/" .. name .. ".*",
-                    "make clean %{cfg.buildcfg}"
+                    "${MAKE} clean %{cfg.buildcfg}"
                 }
 
                 filter {}
@@ -258,7 +258,7 @@ workspace "virtualxt"
 
         cleancommands {
             "{RMDIR} build/libretro",
-            "make clean %{cfg.buildcfg}"
+            "${MAKE} clean %{cfg.buildcfg}"
         }
 
         filter "toolset:clang or gcc"
@@ -320,7 +320,7 @@ workspace "virtualxt"
 
         cleancommands {
             "{RMDIR} build/web",
-            "make clean %{cfg.buildcfg}"
+            "${MAKE} clean %{cfg.buildcfg}"
         }
 
     project "sdl2-frontend"
@@ -349,7 +349,7 @@ workspace "virtualxt"
 
         cleancommands {
             "{RMDIR} build/sdl2",
-            "make clean %{cfg.buildcfg}"
+            "${MAKE} clean %{cfg.buildcfg}"
         }
 
         filter "action:vs*"
@@ -402,7 +402,7 @@ workspace "virtualxt"
 
         cleancommands {
             "{RMDIR} build/sdl3",
-            "make clean %{cfg.buildcfg}"
+            "${MAKE} clean %{cfg.buildcfg}"
         }
 
         filter "action:vs*"
@@ -452,7 +452,7 @@ workspace "virtualxt"
 
         cleancommands {
             "{RMDIR} build/terminal",
-            "make clean %{cfg.buildcfg}"
+            "${MAKE} clean %{cfg.buildcfg}"
         }
 
         filter "options:validator"
@@ -467,6 +467,11 @@ workspace "virtualxt"
 
         filter "toolset:gcc"
             buildoptions "-Wno-maybe-uninitialized"
+
+	project "rpi-frontend"
+		kind "Makefile"
+		buildcommands "${MAKE} -C front/rpi"
+		cleancommands "${MAKE} -C front/rpi clean"
 
 if _OPTIONS["test"] then
     project "test"

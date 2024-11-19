@@ -88,14 +88,16 @@ static const char *name(struct adlib *a) {
     (void)a; return "AdLib Music Synthesizer";
 }
 
-VXTU_MODULE_CREATE(adlib, {
-    DEVICE->freq = 48000;
-    if (FRONTEND)
-        DEVICE->set_audio_adapter = ((struct frontend_interface*)FRONTEND)->set_audio_adapter;
+static struct vxt_peripheral *create(vxt_allocator *alloc, void *frontend, const char *args) VXT_PERIPHERAL_CREATE(alloc, adlib, {
+	if (frontend)
+		DEVICE->set_audio_adapter = ((struct frontend_interface*)frontend)->set_audio_adapter;
 
-    PERIPHERAL->install = &install;
-    PERIPHERAL->reset = &reset;
-    PERIPHERAL->name = &name;
-    PERIPHERAL->io.in = &in;
-    PERIPHERAL->io.out = &out;
+	DEVICE->freq = 48000;
+	PERIPHERAL->install = &install;
+	PERIPHERAL->reset = &reset;
+	PERIPHERAL->name = &name;
+	PERIPHERAL->io.in = &in;
+	PERIPHERAL->io.out = &out;
 })
+
+VXTU_MODULE_ENTRIES(&create)

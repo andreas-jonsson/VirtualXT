@@ -30,9 +30,19 @@
 #include <frontend.h>
 #include "keymap.h"
 
+//#define LOGSERIAL
+
+#define DRIVE "SD:"
+#define BIOSIMAGE "GLABIOS.ROM"
+#define SAMPLE_RATE	22050
+#define CHUNK_SIZE 256
+#define AUDIO_LATENCY_MS 10
+
 volatile bool mouse_updated = false;
 struct frontend_mouse_event mouse_state;
-struct frontend_video_adapter video_adapter;
+
+struct frontend_video_adapter video_adapter = {0};
+struct frontend_audio_adapter audio_adapter = {0};
 
 unsigned cpu_frequency = VXT_DEFAULT_FREQUENCY;
 
@@ -41,18 +51,15 @@ int screen_height = 0;
 struct vxt_peripheral *ppi = 0;
 struct vxt_peripheral *mouse = 0;
 
+const unsigned audio_buffer_size = (SAMPLE_RATE / 1000) * AUDIO_LATENCY_MS;
+unsigned audio_buffer_len = 0;
+DMA_BUFFER(short, audio_buffer, audio_buffer_size);
+
 CKernel *CKernel::s_pThis = 0;
 CBcmFrameBuffer *pFrameBuffer = 0;
 CDevice *pUMSD1 = 0;
-volatile int pUMSD1_head = 0;
 
 FIL log_file = {0};
-
-//#define LOGSERIAL
-
-#define DRIVE "SD:"
-#define BIOSIMAGE "GLABIOS.ROM"
-#define SAMPLE_RATE	48000
 
 extern "C" {
 	// From joystick.c
@@ -68,6 +75,9 @@ extern "C" {
 
 	// From ems.c
 	struct vxt_peripheral *ems_create(vxt_allocator *alloc, const char *args);
+
+	// From adlib.c
+	struct vxt_peripheral *adlib_create(vxt_allocator *alloc, struct frontend_audio_adapter *aa);
 
 	// From cga.c
 	struct vxt_peripheral *cga_card_create(vxt_allocator *alloc, struct frontend_video_adapter *va);
@@ -259,6 +269,7 @@ CKernel::CKernel(void)
 
 	memset(&mouse_state, 0, sizeof(mouse_state));
 	memset(&video_adapter, 0, sizeof(video_adapter));
+	memset(audio_buffer, 0, audio_buffer_size * 2);
 	memset(m_RawKeys, 0, sizeof(m_RawKeys));
 	s_pThis = this;
 }
@@ -346,22 +357,35 @@ TShutdownMode CKernel::Run(void) {
 	if ((pUMSD1 = m_DeviceNameService.GetDevice("umsd1", TRUE)))
 		VXT_LOG("Found USB storage device!");
 
+	VXT_LOG("Initializing audio...");
 	const char *pSoundDevice = m_Options.GetSoundDevice();
-	if (!strcmp(pSoundDevice, "sndpwm")) {
-		m_pSound = new CPWMSoundBaseDevice(&m_Interrupt, SAMPLE_RATE, 1);
+	if (pSoundDevice) {
+		if (!strcmp(pSoundDevice, "sndhdmi"))
+			m_pSound = new CHDMISoundBaseDevice(&m_Interrupt, SAMPLE_RATE, CHUNK_SIZE);
 
-		if (!m_pSound->AllocateQueueFrames(1))
-			VXT_LOG("Cannot allocate sound queue!");
+		#if RASPPI >= 4
+			if (!m_pSound && !strcmp(pSoundDevice, "sndusb"))
+				m_pSound = new CUSBSoundBaseDevice(SAMPLE_RATE);
+		#endif
+	}
 
+	// Use PWM as default audio device.
+	if (!m_pSound) {
+		pSoundDevice = "sndpwm";
+		m_pSound = new CPWMSoundBaseDevice(&m_Interrupt, SAMPLE_RATE, CHUNK_SIZE);
+	}
+	
+	if (m_pSound) {
+		VXT_LOG("Sound device: %s", pSoundDevice);
 		m_pSound->SetWriteFormat(SoundFormatSigned16, 1);
-
-		//unsigned nQueueSizeFrames = m_pSound->GetQueueSizeFrames();
-		//WriteSoundData(nQueueSizeFrames);
+		
+		if (!m_pSound->AllocateQueue(AUDIO_LATENCY_MS))
+			VXT_LOG("Cannot allocate sound queue!");
 
 		if (!m_pSound->Start())
 			VXT_LOG("Cannot start sound device!");
 	} else {
-		VXT_LOG("No supported audio device!");
+		VXT_LOG("Sound device is not supported!");
 	}
 
 	struct vxtu_disk_interface2 intrf = {
@@ -385,6 +409,7 @@ TShutdownMode CKernel::Run(void) {
 		(disk = vxtu_disk_create2(&allocator, &intrf)),
 		(mouse = mouse_create(&allocator, NULL, "0x3F8")),
 		//(joystick = joystick_create(&allocator, NULL, "0x201")),
+		adlib_create(&allocator, &audio_adapter),
 		use_cga ? cga_card_create(&allocator, &video_adapter) : vga_card_create(&allocator, &video_adapter),
 		use_cga ? NULL : load_bios("vgabios.bin", 0xC0000),
 		NULL
@@ -469,12 +494,27 @@ TShutdownMode CKernel::Run(void) {
 	    	video_adapter.render(video_adapter.device, &render_callback, &m_Options);
 		}
 
-		if ((ticks - audioTicks) >= (CLOCKHZ / SAMPLE_RATE)) {
-			audioTicks = ticks;
-			if (m_pSound && m_pSound->IsActive()) {
+		while ((ticks - audioTicks) >= (CLOCKHZ / SAMPLE_RATE)) {
+			audioTicks += CLOCKHZ / SAMPLE_RATE;
+
+			// Generate audio.
+			if (audio_buffer_len < audio_buffer_size) {
 				short sample = vxtu_ppi_generate_sample(ppi, SAMPLE_RATE);
-				m_pSound->Write((u8*)&sample, 2);
-			}			
+				if (audio_adapter.device)
+					sample += audio_adapter.generate_sample(audio_adapter.device, SAMPLE_RATE);
+				audio_buffer[audio_buffer_len++] = sample;
+			}
+
+			// Write audio data to output device.
+			if (m_pSound && m_pSound->IsActive()) {
+				const unsigned samples_needed = m_pSound->GetQueueSizeFrames() - m_pSound->GetQueueFramesAvail();
+
+				if ((audio_buffer_len == audio_buffer_size) || (samples_needed > audio_buffer_len)) {
+					unsigned num_samples = (samples_needed < audio_buffer_len) ? samples_needed : audio_buffer_len;
+					m_pSound->Write((u8*)audio_buffer, num_samples * 2);
+					audio_buffer_len = 0;
+				}
+			}
 		}
 
 		u64	cpuTicks = ticks * (cpu_frequency / 1000000);

@@ -11,9 +11,11 @@ on:
 env:
   VXT_VERSION: 1.2.0
   ZIG_VERSION: 0.10.1
-  ZIG_ARCHS: "x86_64-linux-gnu i386-linux-gnu aarch64-linux-gnu arm-linux-gnueabi x86_64-macos-none aarch64-macos-none"
+  #ZIG_ARCHS: "x86_64-linux-gnu i386-linux-gnu aarch64-linux-gnu arm-linux-gnueabi x86_64-macos-none aarch64-macos-none"
+  ZIG_ARCHS: "x86_64-linux-gnu"
   NDK_VERSION: r20
-  NDK_ARCHS: "aarch64-linux-android armv7a-linux-androideabi x86_64-linux-android i686-linux-android"
+  #NDK_ARCHS: "aarch64-linux-android armv7a-linux-androideabi x86_64-linux-android i686-linux-android"
+  NDK_ARCHS: "aarch64-linux-android"
 
 jobs:
   libretro-build:
@@ -92,7 +94,7 @@ jobs:
             cp build/libretro/*.so package/virtualxt/${arch}
           done
 
-      - name: Package & Deploy
-        env:
-          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-        run: if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then ./tools/package/itch/push-libretro.sh; fi
+      #- name: Package & Deploy
+      #  env:
+      #    BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+      #  run: if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then ./tools/package/itch/push-libretro.sh; fi

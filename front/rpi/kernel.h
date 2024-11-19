@@ -34,6 +34,8 @@
 #include <circle/logger.h>
 #include <circle/sound/soundbasedevice.h>
 #include <circle/sound/pwmsoundbasedevice.h>
+#include <circle/sound/hdmisoundbasedevice.h>
+#include <circle/sound/usbsoundbasedevice.h>
 #include <circle/usb/usbhcidevice.h>
 #include <circle/usb/usbkeyboard.h>
 #include <circle/input/mouse.h>
