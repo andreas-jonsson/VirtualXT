@@ -100,9 +100,6 @@ private:
 
 	CSoundBaseDevice *m_pSound;
 
-	unsigned char m_Modifiers;
-	unsigned char m_RawKeys[6];
-
 	static CKernel *s_pThis;
 };
 

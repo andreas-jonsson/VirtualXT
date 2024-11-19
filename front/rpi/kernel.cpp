@@ -41,6 +41,10 @@
 volatile bool mouse_updated = false;
 struct frontend_mouse_event mouse_state;
 
+volatile bool keyboard_updated = false;
+bool key_states_current[0x100];
+bool key_states[0x100];
+
 struct frontend_video_adapter video_adapter = {0};
 struct frontend_audio_adapter audio_adapter = {0};
 
@@ -48,8 +52,6 @@ unsigned cpu_frequency = VXT_DEFAULT_FREQUENCY;
 
 int screen_width = 0;
 int screen_height = 0;
-struct vxt_peripheral *ppi = 0;
-struct vxt_peripheral *mouse = 0;
 
 const unsigned audio_buffer_size = (SAMPLE_RATE / 1000) * AUDIO_LATENCY_MS;
 unsigned audio_buffer_len = 0;
@@ -259,8 +261,7 @@ CKernel::CKernel(void)
 	m_pMouse(0),
 	m_pKeyboard(0),
 	m_ShutdownMode(ShutdownNone),
-	m_pSound(0),
-	m_Modifiers(0)
+	m_pSound(0)
 {
 	// Initialize here to clear screen during boot.
 	pFrameBuffer = new CBcmFrameBuffer(m_Options.GetWidth(), m_Options.GetHeight(), 32);
@@ -268,9 +269,11 @@ CKernel::CKernel(void)
 		delete pFrameBuffer;
 
 	memset(&mouse_state, 0, sizeof(mouse_state));
+	memset(key_states, 0, sizeof(key_states));
+	memset(key_states_current, 0, sizeof(key_states_current));
+	
 	memset(&video_adapter, 0, sizeof(video_adapter));
 	memset(audio_buffer, 0, audio_buffer_size * 2);
-	memset(m_RawKeys, 0, sizeof(m_RawKeys));
 	s_pThis = this;
 }
 
@@ -313,6 +316,8 @@ boolean CKernel::Initialize(void) {
 }
 
 TShutdownMode CKernel::Run(void) {
+	struct vxt_peripheral *ppi = 0;
+	struct vxt_peripheral *mouse = 0;
 	struct vxt_peripheral *disk = NULL;
 	//struct vxt_peripheral *joystick = NULL;
 
@@ -456,6 +461,20 @@ TShutdownMode CKernel::Run(void) {
 			if (m_pKeyboard)
 				m_pKeyboard->UpdateLEDs();
 
+			if (keyboard_updated) {
+				for (int i = 0; i < 0x100; i++) {
+					bool bnew = key_states[i];
+					bool *bcurrent = &key_states_current[i];
+					
+					if (bnew || (bnew != *bcurrent)) {
+						enum vxtu_scancode scan = (enum vxtu_scancode)i;
+						vxtu_ppi_key_event(ppi, bnew ? scan : VXTU_KEY_UP(scan), false);
+					}
+					*bcurrent = bnew;
+				}	
+				keyboard_updated = false;
+			}
+
 			if (m_pMouse && mouse_updated) {
 				mouse_push_event(mouse, &mouse_state);
 				mouse_updated = false;
@@ -538,61 +557,24 @@ void CKernel::InitializeAudio(void) {
 }
 
 void CKernel::KeyStatusHandlerRaw(unsigned char ucModifiers, const unsigned char RawKeys[6]) {
-	assert(s_pThis);
-	assert(ppi);
+	if (keyboard_updated)
+		return;
 
+	memset(key_states, 0, sizeof(key_states));
 	for(int i = 0; i < NUM_MODIFIERS; i++) {
 		const int mask = 1 << i;
-		bool was_pressed = (s_pThis->m_Modifiers & mask) != 0;
-		bool is_pressed = (ucModifiers & mask) != 0;
-
-		enum vxtu_scancode scan = VXTU_SCAN_INVALID;
-		if (!was_pressed && is_pressed) {
-			scan = modifierToXT[i];
-		} else if (was_pressed && !is_pressed) {
-			scan = modifierToXT[i];
-			if (scan != VXTU_SCAN_INVALID)
-				scan = VXTU_KEY_UP(scan);
-		}
-
-		if (scan != VXTU_SCAN_INVALID)
-			vxtu_ppi_key_event(ppi, scan, false);
+		key_states[modifierToXT[i]] = (ucModifiers & mask);
 	}
 
 	for (int i = 0; i < 6; i++) {
-		if (s_pThis->m_RawKeys[i]) {
-			bool found = false;
-			for (int j = 0; j < 6; j++) {
-				if (s_pThis->m_RawKeys[i] == RawKeys[j]) {
-					found = true;
-					break;
-				}
-			}
-
-			enum vxtu_scancode scan = usbToXT[RawKeys[i]];
-			if (!found && scan != VXTU_SCAN_INVALID)
-				vxtu_ppi_key_event(ppi, VXTU_KEY_UP(scan), false);
-		}
+		unsigned char raw = RawKeys[i];
+		if (raw == 0xE0)
+			continue;
+			
+		enum vxtu_scancode scan = usbToXT[raw];
+		key_states[scan] = true;
 	}
-
-	for (int i = 0; i < 6; i++) {
-		if (RawKeys[i]) {
-			bool found = false;
-			for (int j = 0; j < 6; j++) {
-				if (RawKeys[i] == s_pThis->m_RawKeys[j]) {
-					found = true;
-					break;
-				}
-			}
-
-			enum vxtu_scancode scan = usbToXT[RawKeys[i]];
-			if (!found && scan != VXTU_SCAN_INVALID)
-				vxtu_ppi_key_event(ppi, scan, false);
-		}
-	}
-
-	s_pThis->m_Modifiers = ucModifiers;
-	memcpy(s_pThis->m_RawKeys, RawKeys, sizeof(s_pThis->m_RawKeys)); 
+	keyboard_updated = true;
 }
 
 void CKernel::KeyboardRemovedHandler(CDevice *pDevice, void *pContext) {
@@ -602,7 +584,6 @@ void CKernel::KeyboardRemovedHandler(CDevice *pDevice, void *pContext) {
 }
 
 void CKernel::MouseStatusHandlerRaw(unsigned nButtons, int nDisplacementX, int nDisplacementY, int nWheelMove) {
-	assert(s_pThis != 0);
 	if (mouse_updated)
 		return;
 
