@@ -66,10 +66,10 @@ FIL log_file = {0};
 extern "C" {
 	// From joystick.c
 	bool joystick_push_event(struct vxt_peripheral *p, const struct frontend_joystick_event *ev);
-	struct vxt_peripheral *joystick_create(vxt_allocator *alloc, void *frontend, const char *args);
+	struct vxt_peripheral *joystick_create(vxt_allocator *alloc, const char *args);
 
 	// From mouse.c
-	struct vxt_peripheral *mouse_create(vxt_allocator *alloc, void *frontend, const char *args);
+	struct vxt_peripheral *mouse_create(vxt_allocator *alloc, const char *args);
 	bool mouse_push_event(struct vxt_peripheral *p, const struct frontend_mouse_event *ev);
 
 	// From ethernet.cpp
@@ -268,6 +268,9 @@ CKernel::CKernel(void)
 	if (!pFrameBuffer->Initialize())
 		delete pFrameBuffer;
 
+	for (int i = 0; i < MAX_GAMEPADS; i++)
+		m_pGamePad[i] = 0;
+	
 	memset(&mouse_state, 0, sizeof(mouse_state));
 	memset(key_states, 0, sizeof(key_states));
 	memset(key_states_current, 0, sizeof(key_states_current));
@@ -319,7 +322,7 @@ TShutdownMode CKernel::Run(void) {
 	struct vxt_peripheral *ppi = 0;
 	struct vxt_peripheral *mouse = 0;
 	struct vxt_peripheral *disk = NULL;
-	//struct vxt_peripheral *joystick = NULL;
+	struct vxt_peripheral *joystick = NULL;
 
 	#ifdef LOGSERIAL
 		vxt_set_logger(&dev_logger);
@@ -383,8 +386,8 @@ TShutdownMode CKernel::Run(void) {
 		ems_create(&allocator, "lotech_ems"),
 		(ppi = vxtu_ppi_create(&allocator)),
 		(disk = vxtu_disk_create2(&allocator, &intrf)),
-		(mouse = mouse_create(&allocator, NULL, "0x3F8")),
-		//(joystick = joystick_create(&allocator, NULL, "0x201")),
+		(mouse = mouse_create(&allocator, "0x3F8")),
+		//(joystick = joystick_create(&allocator, "0x201")),
 		adlib_create(&allocator, &audio_adapter),
 		use_cga ? cga_card_create(&allocator, &video_adapter) : vga_card_create(&allocator, &video_adapter),
 		use_cga ? NULL : load_bios("vgabios.bin", 0xC0000),
@@ -392,7 +395,7 @@ TShutdownMode CKernel::Run(void) {
 	};
 
 	cpu_frequency = m_Options.GetAppOptionDecimal("CPUFREQ", cpu_frequency);
-	VXT_LOG("CPU frequency: %02fMHz", (double)cpu_frequency / 1000000.0);
+	VXT_LOG("CPU frequency: %.2fMHz", (double)cpu_frequency / 1000000.0);
 	
 	vxt_system *s = vxt_system_create(&allocator, (int)cpu_frequency, devices);
 	if (!s) {
@@ -454,6 +457,27 @@ TShutdownMode CKernel::Run(void) {
 						m_pMouse->RegisterRemovedHandler(MouseRemovedHandler);
 						m_pMouse->RegisterStatusHandler(MouseStatusHandlerRaw);
 						VXT_LOG("Mouse connected!");
+					}
+				}
+
+				if (joystick) {
+					for (unsigned u = 1; u <= MAX_GAMEPADS; u++) {
+						if (m_pGamePad[u - 1])
+							continue;
+
+						CUSBGamePadDevice *gp = (m_pGamePad[u - 1] = (CUSBGamePadDevice*)m_DeviceNameService.GetDevice("upad", u, FALSE));
+						if (!gp)
+							continue;
+
+						const TGamePadState *pState = gp->GetInitialState();
+						assert(pState != 0);
+
+						VXT_LOG("Gamepad %u: %d Button(s) %d Hat(s)", u, pState->nbuttons, pState->nhats);
+						for (int i = 0; i < pState->naxes; i++)
+							VXT_LOG("Gamepad %u: Axis %d: Minimum %d Maximum %d", u, i + 1, pState->axes[i].minimum, pState->axes[i].maximum);
+
+						gp->RegisterRemovedHandler(GamePadRemovedHandler, this);
+						gp->RegisterStatusHandler(GamePadStatusHandler);
 					}
 				}
 			}
@@ -597,7 +621,24 @@ void CKernel::MouseStatusHandlerRaw(unsigned nButtons, int nDisplacementX, int n
 }
 
 void CKernel::MouseRemovedHandler(CDevice *pDevice, void *pContext) {
-	assert(s_pThis != 0);
+	assert(s_pThis);
 	VXT_LOG("Mouse removed!");
 	s_pThis->m_pMouse = 0;
+}
+
+void CKernel::GamePadStatusHandler(unsigned nDeviceIndex, const TGamePadState *pState) {
+	// TODO
+}
+
+void CKernel::GamePadRemovedHandler(CDevice *pDevice, void *pContext) {
+	CKernel *pThis = (CKernel*)pContext;
+	assert(pThis);
+
+	for (int i = 0; i < MAX_GAMEPADS; i++) {
+		if (pThis->m_pGamePad[i] == (CUSBGamePadDevice*)pDevice) {
+			VXT_LOG("Gamepad %d removed!", i + 1);
+			pThis->m_pGamePad[i] = 0;
+			return;
+		}
+	}
 }

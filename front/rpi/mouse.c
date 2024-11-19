@@ -22,8 +22,8 @@
 #include "../../lib/scanf/scanf.h"
 #include "../../modules/mouse/mouse.c"
 
-struct vxt_peripheral *mouse_create(vxt_allocator *alloc, void *frontend, const char *args) {
-    return create(alloc, frontend, args);
+struct vxt_peripheral *mouse_create(vxt_allocator *alloc, const char *args) {
+    return create(alloc, NULL, args);
 }
 
 bool mouse_push_event(struct vxt_peripheral *p, const struct frontend_mouse_event *ev) {

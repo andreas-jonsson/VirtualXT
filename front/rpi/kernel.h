@@ -38,6 +38,7 @@
 #include <circle/sound/usbsoundbasedevice.h>
 #include <circle/usb/usbhcidevice.h>
 #include <circle/usb/usbkeyboard.h>
+#include <circle/usb/usbgamepad.h>
 #include <circle/input/mouse.h>
 #include <circle/bcm54213.h>
 #include <circle/macb.h>
@@ -52,6 +53,8 @@
 
 #undef NULL
 #define NULL nullptr
+
+#define MAX_GAMEPADS 2
 
 enum TShutdownMode {
 	ShutdownNone,
@@ -77,6 +80,9 @@ private:
 	static void MouseStatusHandlerRaw(unsigned nButtons, int nDisplacementX, int nDisplacementY, int nWheelMove);
 	static void MouseRemovedHandler(CDevice *pDevice, void *pContext);
 
+	static void GamePadStatusHandler(unsigned nDeviceIndex, const TGamePadState *pState);
+	static void GamePadRemovedHandler(CDevice *pDevice, void *pContext);
+	
 	// Do not change this order!
 	CKernelOptions		m_Options;
 	CDeviceNameService	m_DeviceNameService;
@@ -96,6 +102,7 @@ private:
 
 	CMouseDevice *volatile m_pMouse;
 	CUSBKeyboardDevice *volatile m_pKeyboard;
+	CUSBGamePadDevice * volatile m_pGamePad[MAX_GAMEPADS];
 	volatile TShutdownMode m_ShutdownMode;
 
 	CSoundBaseDevice *m_pSound;

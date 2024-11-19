@@ -19,12 +19,13 @@
 // 3. This notice may not be removed or altered from any source
 //    distribution.
 
+#include "../../lib/scanf/scanf.h"
 #include "../../modules/joystick/joystick.c"
 
 bool joystick_push_event(struct vxt_peripheral *p, const struct frontend_joystick_event *ev) {
     return push_event(p, ev);
 }
 
-struct vxt_peripheral *joystick_create(vxt_allocator *alloc, void *frontend, const char *args) {
-    return create(alloc, frontend, args);
+struct vxt_peripheral *joystick_create(vxt_allocator *alloc, const char *args) {
+    return create(alloc, NULL, args);
 }
