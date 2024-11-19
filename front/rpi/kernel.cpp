@@ -357,36 +357,7 @@ TShutdownMode CKernel::Run(void) {
 	if ((pUMSD1 = m_DeviceNameService.GetDevice("umsd1", TRUE)))
 		VXT_LOG("Found USB storage device!");
 
-	VXT_LOG("Initializing audio...");
-	const char *pSoundDevice = m_Options.GetSoundDevice();
-	if (pSoundDevice) {
-		if (!strcmp(pSoundDevice, "sndhdmi"))
-			m_pSound = new CHDMISoundBaseDevice(&m_Interrupt, SAMPLE_RATE, CHUNK_SIZE);
-
-		#if RASPPI >= 4
-			if (!m_pSound && !strcmp(pSoundDevice, "sndusb"))
-				m_pSound = new CUSBSoundBaseDevice(SAMPLE_RATE);
-		#endif
-	}
-
-	// Use PWM as default audio device.
-	if (!m_pSound) {
-		pSoundDevice = "sndpwm";
-		m_pSound = new CPWMSoundBaseDevice(&m_Interrupt, SAMPLE_RATE, CHUNK_SIZE);
-	}
-	
-	if (m_pSound) {
-		VXT_LOG("Sound device: %s", pSoundDevice);
-		m_pSound->SetWriteFormat(SoundFormatSigned16, 1);
-		
-		if (!m_pSound->AllocateQueue(AUDIO_LATENCY_MS))
-			VXT_LOG("Cannot allocate sound queue!");
-
-		if (!m_pSound->Start())
-			VXT_LOG("Cannot start sound device!");
-	} else {
-		VXT_LOG("Sound device is not supported!");
-	}
+	InitializeAudio();
 
 	struct vxtu_disk_interface2 intrf = {
 		&read_sector, &write_sector, &num_sectors
@@ -534,6 +505,36 @@ TShutdownMode CKernel::Run(void) {
 	f_unmount(DRIVE);
 	
 	return m_ShutdownMode;
+}
+
+void CKernel::InitializeAudio(void) {
+	VXT_LOG("Initializing audio...");
+
+	const char *pSoundDevice = m_Options.GetSoundDevice();
+	if (pSoundDevice) {
+		if (!strcmp(pSoundDevice, "sndhdmi"))
+			m_pSound = new CHDMISoundBaseDevice(&m_Interrupt, SAMPLE_RATE, CHUNK_SIZE);
+
+		#if RASPPI >= 4
+			if (!m_pSound && !strcmp(pSoundDevice, "sndusb"))
+				m_pSound = new CUSBSoundBaseDevice(SAMPLE_RATE);
+		#endif
+	}
+
+	// Use PWM as default audio device.
+	if (!m_pSound) {
+		pSoundDevice = "sndpwm";
+		m_pSound = new CPWMSoundBaseDevice(&m_Interrupt, SAMPLE_RATE, CHUNK_SIZE);
+	}
+	
+	VXT_LOG("Sound device: %s", pSoundDevice);
+	m_pSound->SetWriteFormat(SoundFormatSigned16, 1);
+	
+	if (!m_pSound->AllocateQueue(AUDIO_LATENCY_MS))
+		VXT_LOG("Cannot allocate sound queue!");
+
+	if (!m_pSound->Start())
+		VXT_LOG("Cannot start sound device!");
 }
 
 void CKernel::KeyStatusHandlerRaw(unsigned char ucModifiers, const unsigned char RawKeys[6]) {

@@ -34,6 +34,12 @@ newoption {
     description = "Enable the PI8088 hardware validator"
 }
 
+newoption {
+    trigger = "circle",
+    value = "PATH",
+    description = "Path to the Circle library"
+}
+
 newaction {
     trigger = "check",
     description = "Run CppCheck on libvxt",
@@ -468,10 +474,13 @@ workspace "virtualxt"
         filter "toolset:gcc"
             buildoptions "-Wno-maybe-uninitialized"
 
-	project "rpi-frontend"
-		kind "Makefile"
-		buildcommands "${MAKE} -C front/rpi"
-		cleancommands "${MAKE} -C front/rpi clean"
+	local circle_path = _OPTIONS["circle"]
+	if circle_path then
+		project "rpi-frontend"
+			kind "Makefile"
+			buildcommands { "CIRCLEHOME=\"" .. circle_path .. "\" ${MAKE} -C front/rpi" }
+			cleancommands { "CIRCLEHOME=\"" .. circle_path .. "\" ${MAKE} -C front/rpi clean" }
+	end
 
 if _OPTIONS["test"] then
     project "test"
