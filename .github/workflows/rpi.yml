@@ -52,7 +52,7 @@ jobs:
           cd "${GITHUB_WORKSPACE}"
           unzip circle.zip
           cd "${CIRCLEHOME}"
-          ./configure -p aarch64-none-elf-
+          ./configure -r 3 -p aarch64-none-elf-
           make -C "${CIRCLEHOME}/boot"
           cp "${CIRCLEHOME}"/boot/*.dtb "${GITHUB_WORKSPACE}/package"
           cp "${CIRCLEHOME}"/boot/*.dat "${GITHUB_WORKSPACE}/package"
@@ -63,14 +63,15 @@ jobs:
       - name: Build (RaspberryPi3)
         run: |
           export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-master"
-          rm -rf "${CIRCLEHOME}"
-          cd "${GITHUB_WORKSPACE}"
-          unzip circle.zip
+          #rm -rf "${CIRCLEHOME}"
+          #cd "${GITHUB_WORKSPACE}"
+          #unzip circle.zip
           cd "${CIRCLEHOME}"
-          ./configure -r 3 -p aarch64-none-elf-
+          #./configure -r 3 -p aarch64-none-elf-
           ./makeall
           make -C "${CIRCLEHOME}/addon/fatfs"
           make -C "${CIRCLEHOME}/addon/SDCard"
+          #make -C "${GITHUB_WORKSPACE}/front/rpi" clean # Must clean libvxt etc.
           make -C "${GITHUB_WORKSPACE}/front/rpi"
           cp "${GITHUB_WORKSPACE}/front/rpi/kernel8.img" "${GITHUB_WORKSPACE}"
 
