@@ -227,11 +227,13 @@ extern "C" {
 			if (pFrameBuffer)
 				delete pFrameBuffer;
 
-			CKernelOptions *opt = (CKernelOptions*)userdata;
 			pFrameBuffer = new CBcmFrameBuffer((unsigned)width, (unsigned)height, 32);
 
 			if (!pFrameBuffer->Initialize()) {
 				VXT_LOG("Could not set correct ressolution. Fallback to virtual resolution.");
+
+				delete pFrameBuffer;
+				CKernelOptions *opt = (CKernelOptions*)userdata;
 				pFrameBuffer = new CBcmFrameBuffer(opt->GetWidth(), opt->GetHeight(), 32, (unsigned)width, (unsigned)height);
 
 				if (!pFrameBuffer->Initialize()) {
@@ -242,12 +244,23 @@ extern "C" {
 			}
 		}
 
-		u8 *buffer = (u8*)pFrameBuffer->GetBuffer();
+		u8 *buffer = (u8*)(u64)pFrameBuffer->GetBuffer();
 		for (int i = 0; i < height; i++) {
-			memcpy(buffer, rgba, 4 * width);
+			// This is probably a firmware bug!
+			// The framebuffer should be 32 bit at this point.
+			#if RASPPI == 5
+				#define COLOR(red, green, blue) (((red) & 0x1F) << 11 | ((green) & 0x1F) << 6 | ((blue) & 0x1F))
+				for (int j = 0; j < width; j++) {
+					((u16*)buffer)[j] = COLOR(rgba[2], rgba[1], rgba[0]);
+					rgba += 4;
+				}
+			#else
+				memcpy(buffer, rgba, 4 * width);
+				rgba += 4 * width;
+			#endif
 			buffer += pFrameBuffer->GetPitch();
-			rgba += 4 * width;
 		}
+		
 	    return 0;
 	}
 }
@@ -353,6 +366,8 @@ TShutdownMode CKernel::Run(void) {
 		if (log_file_name && (f_open(&log_file, log_file_name, FA_WRITE|FA_CREATE_ALWAYS) == FR_OK))
 			vxt_set_logger(&file_logger);
 	#endif
+
+	VXT_LOG("Machine: %s (%s)", CMachineInfo::Get()->GetMachineName(), CMachineInfo::Get()->GetSoCName());
 	
 	bool has_floppy = true;
 	FIL floppy_file;
@@ -571,19 +586,25 @@ void CKernel::InitializeAudio(void) {
 
 	const char *pSoundDevice = m_Options.GetSoundDevice();
 	if (pSoundDevice) {
-		if (!strcmp(pSoundDevice, "sndhdmi"))
+		if (!strcmp(pSoundDevice, "sndpwm"))
+			m_pSound = new CPWMSoundBaseDevice(&m_Interrupt, SAMPLE_RATE, CHUNK_SIZE);	
+		else if (!strcmp(pSoundDevice, "sndhdmi"))
 			m_pSound = new CHDMISoundBaseDevice(&m_Interrupt, SAMPLE_RATE, CHUNK_SIZE);
-
 		#if RASPPI >= 4
-			if (!m_pSound && !strcmp(pSoundDevice, "sndusb"))
+			else if (!m_pSound && !strcmp(pSoundDevice, "sndusb"))
 				m_pSound = new CUSBSoundBaseDevice(SAMPLE_RATE);
 		#endif
 	}
 
-	// Use PWM as default audio device.
+	// Use PWM or HDMI as default audio device.
 	if (!m_pSound) {
-		pSoundDevice = "sndpwm";
-		m_pSound = new CPWMSoundBaseDevice(&m_Interrupt, SAMPLE_RATE, CHUNK_SIZE);
+		//#if RASPPI <= 4
+			pSoundDevice = "sndpwm";
+			m_pSound = new CPWMSoundBaseDevice(&m_Interrupt, SAMPLE_RATE, CHUNK_SIZE);
+		//#else
+		//	pSoundDevice = "sndhdmi";
+		//	m_pSound = new CHDMISoundBaseDevice(&m_Interrupt, SAMPLE_RATE, CHUNK_SIZE);
+		//#endif
 	}
 	
 	VXT_LOG("Sound device: %s", pSoundDevice);
