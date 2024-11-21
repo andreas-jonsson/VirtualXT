@@ -27,12 +27,14 @@ jobs:
       - name: Setup
         run: |
           sudo apt-get update
-          sudo apt-get install cppcheck gcc-arm-none-eabi
+          sudo apt-get install cppcheck
           curl -L -o circle.zip https://github.com/virtualxt/circle/archive/refs/heads/master.zip
           curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip -d butler
           curl -L -o premake5.tar.gz https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-linux.tar.gz && mkdir premake5 && tar -xf premake5.tar.gz -C premake5
+          curl -L -o toolchain.tar.xz https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf.tar.xz && tar -xf toolchain.tar.xz
           echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
           echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
+          echo "${GITHUB_WORKSPACE}/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf/bin" >> $GITHUB_PATH
 
       - name: Test & Check
         run: |
@@ -50,13 +52,13 @@ jobs:
           cd "${GITHUB_WORKSPACE}"
           unzip circle.zip
           cd "${CIRCLEHOME}"
-          ./configure
+          ./configure -p aarch64-none-elf-
           make -C "${CIRCLEHOME}/boot"
           cp "${CIRCLEHOME}"/boot/*.dtb "${GITHUB_WORKSPACE}/package"
           cp "${CIRCLEHOME}"/boot/*.dat "${GITHUB_WORKSPACE}/package"
           cp "${CIRCLEHOME}"/boot/*.bin "${GITHUB_WORKSPACE}/package"
           cp "${CIRCLEHOME}"/boot/*.elf "${GITHUB_WORKSPACE}/package"
-          cp "${CIRCLEHOME}/boot/config32.txt" "${GITHUB_WORKSPACE}/package/config.txt"
+          cp "${CIRCLEHOME}/boot/config64.txt" "${GITHUB_WORKSPACE}/package/config.txt"
           
       - name: Build (RaspberryPi3)
         run: |
@@ -65,12 +67,12 @@ jobs:
           cd "${GITHUB_WORKSPACE}"
           unzip circle.zip
           cd "${CIRCLEHOME}"
-          ./configure -r 3
+          ./configure -r 3 -p aarch64-none-elf-
           ./makeall
           make -C "${CIRCLEHOME}/addon/fatfs"
           make -C "${CIRCLEHOME}/addon/SDCard"
           make -C "${GITHUB_WORKSPACE}/front/rpi"
-          cp "${GITHUB_WORKSPACE}/front/rpi/kernel8-32.img" "${GITHUB_WORKSPACE}"
+          cp "${GITHUB_WORKSPACE}/front/rpi/kernel8.img" "${GITHUB_WORKSPACE}"
 
       - name: Build (RaspberryPi4)
         run: |
@@ -79,13 +81,28 @@ jobs:
           cd "${GITHUB_WORKSPACE}"
           unzip circle.zip
           cd "${CIRCLEHOME}"
-          ./configure -r 4
+          ./configure -r 4 -p aarch64-none-elf-
           ./makeall
           make -C "${CIRCLEHOME}/addon/fatfs"
           make -C "${CIRCLEHOME}/addon/SDCard"
           make -C "${GITHUB_WORKSPACE}/front/rpi" clean # Must clean libvxt etc.
           make -C "${GITHUB_WORKSPACE}/front/rpi"
-          cp "${GITHUB_WORKSPACE}/front/rpi/kernel7l.img" "${GITHUB_WORKSPACE}"
+          cp "${GITHUB_WORKSPACE}/front/rpi/kernel8-rpi4.img" "${GITHUB_WORKSPACE}"
+
+      - name: Build (RaspberryPi5)
+        run: |
+          export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-master"
+          rm -rf "${CIRCLEHOME}"
+          cd "${GITHUB_WORKSPACE}"
+          unzip circle.zip
+          cd "${CIRCLEHOME}"
+          ./configure -r 5 -p aarch64-none-elf-
+          ./makeall
+          make -C "${CIRCLEHOME}/addon/fatfs"
+          make -C "${CIRCLEHOME}/addon/SDCard"
+          make -C "${GITHUB_WORKSPACE}/front/rpi" clean # Must clean libvxt etc.
+          make -C "${GITHUB_WORKSPACE}/front/rpi"
+          cp "${GITHUB_WORKSPACE}/front/rpi/kernel_2712.img" "${GITHUB_WORKSPACE}"
 
       - name: Package
         run: |

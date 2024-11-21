@@ -253,7 +253,13 @@ extern "C" {
 }
 
 CKernel::CKernel(void)
-:	m_CPUThrottle(CPUSpeedMaximum),
+:	m_CPUThrottle(
+		#if RASPPI == 5
+			CPUSpeedUnknown
+		#else
+			CPUSpeedMaximum
+		#endif
+	),
 	m_Timer(&m_Interrupt),
 	m_Logger(m_Options.GetLogLevel()),
 	m_USBHCI(&m_Interrupt, &m_Timer, TRUE),
@@ -432,16 +438,26 @@ TShutdownMode CKernel::Run(void) {
 	assert(CLOCKHZ == 1000000);
 	u64 renderTicks = CTimer::GetClockTicks64();
 	u64 audioTicks = renderTicks;
+	u64 sysTicks = renderTicks;
 	u64 vCpuTicks = renderTicks * (cpu_frequency / 1000000);
+
+	bool usb_updated = false;
 	
 	while (m_ShutdownMode == ShutdownNone) {
-		m_CPUThrottle.Update();
 		u64 ticks = CTimer::GetClockTicks64();
+
+		if ((ticks - sysTicks) >= (CLOCKHZ * 2)) { // Runs once every other second.
+			sysTicks = ticks;
+			m_CPUThrottle.SetOnTemperature();
+			usb_updated = m_USBHCI.UpdatePlugAndPlay() || usb_updated;
+		}
 
 		if ((ticks - renderTicks) >= (CLOCKHZ / 60)) {
 			renderTicks = ticks;
 			
-			if (m_USBHCI.UpdatePlugAndPlay()) {
+			if (usb_updated) {
+				usb_updated = false;
+			
 				if (!m_pKeyboard) {
 					m_pKeyboard = (CUSBKeyboardDevice*)m_DeviceNameService.GetDevice("ukbd1", FALSE);
 					if (m_pKeyboard) {
@@ -592,8 +608,10 @@ void CKernel::KeyStatusHandlerRaw(unsigned char ucModifiers, const unsigned char
 
 	for (int i = 0; i < 6; i++) {
 		unsigned char raw = RawKeys[i];
-		if (raw == 0xE0)
+		if (raw == 0xE0) {
+			i++;
 			continue;
+		}
 			
 		enum vxtu_scancode scan = usbToXT[raw];
 		key_states[scan] = true;
