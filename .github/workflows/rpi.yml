@@ -47,7 +47,7 @@ jobs:
         run: |
           rm -rf "${GITHUB_WORKSPACE}/package"
           mkdir -p "${GITHUB_WORKSPACE}/package"
-          export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-master"
+          export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-develop"
           rm -rf "${CIRCLEHOME}"
           cd "${GITHUB_WORKSPACE}"
           unzip circle.zip
@@ -62,7 +62,7 @@ jobs:
           
       - name: Build (RaspberryPi3)
         run: |
-          export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-master"
+          export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-develop"
           #rm -rf "${CIRCLEHOME}"
           #cd "${GITHUB_WORKSPACE}"
           #unzip circle.zip
@@ -77,7 +77,7 @@ jobs:
 
       - name: Build (RaspberryPi4)
         run: |
-          export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-master"
+          export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-develop"
           rm -rf "${CIRCLEHOME}"
           cd "${GITHUB_WORKSPACE}"
           unzip circle.zip
@@ -92,7 +92,7 @@ jobs:
 
       - name: Build (RaspberryPi5)
         run: |
-          export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-master"
+          export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-develop"
           rm -rf "${CIRCLEHOME}"
           cd "${GITHUB_WORKSPACE}"
           unzip circle.zip
@@ -107,7 +107,7 @@ jobs:
 
       - name: Package
         run: |
-          export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-master"
+          export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-develop"
           ./tools/package/itch/package.rasberrypi.sh
 
       - name: Deploy
