@@ -20,6 +20,8 @@
 //    distribution.
 
 #include "kernel.h"
+#include "emuloop.h"
+
 #include <circle/string.h>
 #include <circle/util.h>
 #include <circle/new.h>
@@ -62,6 +64,7 @@ CBcmFrameBuffer *pFrameBuffer = 0;
 CDevice *pUMSD1 = 0;
 
 FIL log_file = {0};
+static CSpinLock log_lock(TASK_LEVEL);
 
 extern "C" {
 	// From joystick.c
@@ -114,6 +117,8 @@ extern "C" {
 		
 		CString str;
 		str.FormatV(fmt, alist);
+
+		// We do not need to use log_lock here.
 		f_write(&log_file, str, str.GetLength(), 0);
 		f_sync(&log_file);
 		
@@ -130,6 +135,8 @@ extern "C" {
 
 		CString str;
 		str.FormatV(fmt, alist);
+
+		log_lock.Acquire();
 		string_buffer.Append(str);
 		
 		int idx = string_buffer.Find('\n');
@@ -141,6 +148,7 @@ extern "C" {
 			string_buffer = &string_buffer[idx + 1];
 			delete[] cstr;
 		}
+		log_lock.Release();
 		
 		va_end(alist);
 		return 0; // Not correct but it will have to do for now.
@@ -338,8 +346,8 @@ boolean CKernel::Initialize(void) {
 }
 
 TShutdownMode CKernel::Run(void) {
-	struct vxt_peripheral *ppi = 0;
-	struct vxt_peripheral *mouse = 0;
+	struct vxt_peripheral *ppi = NULL;
+	struct vxt_peripheral *mouse = NULL;
 	struct vxt_peripheral *disk = NULL;
 	struct vxt_peripheral *joystick = NULL;
 
@@ -450,12 +458,17 @@ TShutdownMode CKernel::Run(void) {
 	VXT_LOG("CPU reset!");
 	vxt_system_reset(s);
 
+	CEmuLoop *emuloop = new CEmuLoop(CMemorySystem::Get(), s);
+	if (!emuloop->Initialize()) {
+		VXT_LOG("Could not start emulation thread!");
+		return (m_ShutdownMode = ShutdownHalt);
+	}
+
 	assert(CLOCKHZ == 1000000);
 	u64 renderTicks = CTimer::GetClockTicks64();
 	u64 audioTicks = renderTicks;
 	u64 sysTicks = renderTicks;
-	u64 vCpuTicks = renderTicks * (cpu_frequency / 1000000);
-
+	
 	bool usb_updated = false;
 	
 	while (m_ShutdownMode == ShutdownNone) {
@@ -516,26 +529,31 @@ TShutdownMode CKernel::Run(void) {
 			if (m_pKeyboard)
 				m_pKeyboard->UpdateLEDs();
 
-			if (keyboard_updated) {
-				for (int i = 0; i < 0x100; i++) {
-					bool bnew = key_states[i];
-					bool *bcurrent = &key_states_current[i];
-					
-					if (bnew || (bnew != *bcurrent)) {
-						enum vxtu_scancode scan = (enum vxtu_scancode)i;
-						vxtu_ppi_key_event(ppi, bnew ? scan : VXTU_KEY_UP(scan), false);
-					}
-					*bcurrent = bnew;
-				}	
-				keyboard_updated = false;
-			}
+			CEmuLoop::s_SpinLock.Acquire();
+			{
+				if (keyboard_updated) {
+					for (int i = 0; i < 0x100; i++) {
+						bool bnew = key_states[i];
+						bool *bcurrent = &key_states_current[i];
+						
+						if (bnew || (bnew != *bcurrent)) {
+							enum vxtu_scancode scan = (enum vxtu_scancode)i;
+							vxtu_ppi_key_event(ppi, bnew ? scan : VXTU_KEY_UP(scan), false);
+						}
+						*bcurrent = bnew;
+					}	
+					keyboard_updated = false;
+				}
 
-			if (m_pMouse && mouse_updated) {
-				mouse_push_event(mouse, &mouse_state);
-				mouse_updated = false;
-			}
+				if (m_pMouse && mouse_updated) {
+					mouse_push_event(mouse, &mouse_state);
+					mouse_updated = false;
+				}
 
-			video_adapter.snapshot(video_adapter.device);
+				video_adapter.snapshot(video_adapter.device);
+			}
+			CEmuLoop::s_SpinLock.Release();
+
 	    	video_adapter.render(video_adapter.device, &render_callback, &m_Options);
 		}
 
@@ -544,10 +562,14 @@ TShutdownMode CKernel::Run(void) {
 
 			// Generate audio.
 			if (audio_buffer_len < audio_buffer_size) {
-				short sample = vxtu_ppi_generate_sample(ppi, SAMPLE_RATE);
-				if (audio_adapter.device)
-					sample += audio_adapter.generate_sample(audio_adapter.device, SAMPLE_RATE);
-				audio_buffer[audio_buffer_len++] = sample;
+				CEmuLoop::s_SpinLock.Acquire();
+				{
+					short sample = vxtu_ppi_generate_sample(ppi, SAMPLE_RATE);
+					if (audio_adapter.device)
+						sample += audio_adapter.generate_sample(audio_adapter.device, SAMPLE_RATE);
+					audio_buffer[audio_buffer_len++] = sample;
+				}
+				CEmuLoop::s_SpinLock.Release();
 			}
 
 			// Write audio data to output device.
@@ -561,16 +583,10 @@ TShutdownMode CKernel::Run(void) {
 				}
 			}
 		}
-
-		u64	cpuTicks = ticks * (cpu_frequency / 1000000);
-		if (vCpuTicks < cpuTicks) {
-			u64 dtics = cpuTicks - vCpuTicks;
-			struct vxt_step step = vxt_system_step(s, (dtics > cpu_frequency) ? cpu_frequency : dtics);
-			if (step.err != VXT_NO_ERROR)
-				VXT_LOG(vxt_error_str(step.err));
-			vCpuTicks += step.cycles;
-		}
 	}
+
+	// TODO: Stop thread first!
+	delete emuloop;
 
 	vxt_system_destroy(s);
 

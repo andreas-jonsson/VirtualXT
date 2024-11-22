@@ -68,7 +68,6 @@ public:
 	~CKernel(void);
 
 	boolean Initialize(void);
-
 	TShutdownMode Run(void);
 
 private:
@@ -82,7 +81,7 @@ private:
 
 	static void GamePadStatusHandler(unsigned nDeviceIndex, const TGamePadState *pState);
 	static void GamePadRemovedHandler(CDevice *pDevice, void *pContext);
-	
+
 	// Do not change this order!
 	CKernelOptions		m_Options;
 	CDeviceNameService	m_DeviceNameService;

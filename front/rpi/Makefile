@@ -6,7 +6,7 @@ endif
 LIBCHOME = $(VXTHOME)/../scanf
 
 C_STANDARD = -std=c11
-CFLAGS = -DVXT_NO_LIBC -DFRONTEND_VIDEO_BLUE=0 -DFRONTEND_VIDEO_GREEN=1 -DFRONTEND_VIDEO_RED=2 -DFRONTEND_VIDEO_ALPHA=3 -I$(VXTHOME)/include -I../common
+CFLAGS = -DVXT_NO_LIBC -DVXTU_DISK_WAIT_STATES=0 -DFRONTEND_VIDEO_BLUE=0 -DFRONTEND_VIDEO_GREEN=1 -DFRONTEND_VIDEO_RED=2 -DFRONTEND_VIDEO_ALPHA=3 -I$(VXTHOME)/include -I../common
 
 OBJS_VXT = $(VXTHOME)/cpu.o \
 	$(VXTHOME)/disk.o \
@@ -25,7 +25,7 @@ EXTRACLEAN = $(VXTHOME)/*.o $(VXTHOME)/*.d
 OBJS_LIBC = $(LIBCHOME)/scanf.o
 EXTRACLEAN += $(LIBCHOME)/*.o $(LIBCHOME)/*.d
 
-OBJS = main.o kernel.o ethernet.o cga.o vga.o mouse.o joystick.o ems.o adlib.o $(OBJS_VXT) $(OBJS_LIBC)
+OBJS = main.o kernel.o emuloop.o ethernet.o cga.o vga.o mouse.o joystick.o ems.o adlib.o $(OBJS_VXT) $(OBJS_LIBC)
 
 LIBS = $(CIRCLEHOME)/lib/usb/libusb.a \
 	$(CIRCLEHOME)/lib/sound/libsound.a \

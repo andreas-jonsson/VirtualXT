@@ -52,7 +52,7 @@ jobs:
           cd "${GITHUB_WORKSPACE}"
           unzip circle.zip
           cd "${CIRCLEHOME}"
-          ./configure -r 3 -p aarch64-none-elf-
+          ./configure -r 3 --multicore -p aarch64-none-elf-
           make -C "${CIRCLEHOME}/boot"
           cp "${CIRCLEHOME}"/boot/*.dtb "${GITHUB_WORKSPACE}/package"
           cp "${CIRCLEHOME}"/boot/*.dat "${GITHUB_WORKSPACE}/package"
@@ -67,7 +67,7 @@ jobs:
           #cd "${GITHUB_WORKSPACE}"
           #unzip circle.zip
           cd "${CIRCLEHOME}"
-          #./configure -r 3 -p aarch64-none-elf-
+          #./configure -r 3 --multicore -p aarch64-none-elf-
           ./makeall
           make -C "${CIRCLEHOME}/addon/fatfs"
           make -C "${CIRCLEHOME}/addon/SDCard"
@@ -82,7 +82,7 @@ jobs:
           cd "${GITHUB_WORKSPACE}"
           unzip circle.zip
           cd "${CIRCLEHOME}"
-          ./configure -r 4 -p aarch64-none-elf-
+          ./configure -r 4 --multicore -p aarch64-none-elf-
           ./makeall
           make -C "${CIRCLEHOME}/addon/fatfs"
           make -C "${CIRCLEHOME}/addon/SDCard"
@@ -97,7 +97,7 @@ jobs:
           cd "${GITHUB_WORKSPACE}"
           unzip circle.zip
           cd "${CIRCLEHOME}"
-          ./configure -r 5 -p aarch64-none-elf-
+          ./configure -r 5 --multicore -p aarch64-none-elf-
           ./makeall
           make -C "${CIRCLEHOME}/addon/fatfs"
           make -C "${CIRCLEHOME}/addon/SDCard"

@@ -21,7 +21,9 @@
 
 #include <vxt/vxtu.h>
 
-#define WAIT_STATES 1000
+#ifndef VXTU_DISK_WAIT_STATES
+	#define VXTU_DISK_WAIT_STATES 1000
+#endif
 
 struct drive {
     void *fp;
@@ -149,7 +151,7 @@ static void out(struct disk *c, vxt_word port, vxt_byte data) {
     struct vxt_registers *r = vxt_system_registers(s);
 
     // Simulate delay for accessing disk controller.
-    vxt_system_wait(s, WAIT_STATES);
+    vxt_system_wait(s, VXTU_DISK_WAIT_STATES);
 
     switch (port) {
         case 0xB0:
