@@ -1,5 +1,5 @@
 Copy all files to the root directory of a FAT32 formated SDCard.
-(Only RasberryPi 3 and 4 is supported at this time.)
+VirtualXT can run on a RasberryPi 3/4/5 although RasberryPi 5 is not well tested.
 
 The default boot order is SD:A.img, SD:C.img, USB:RAW. Note that USB drives
 are not plug and play. They need to be inserted and removed while the system
@@ -20,3 +20,4 @@ VirtualXT specific options in cmdline.txt:
   HD=<harddrive image on SDCard>
   LOGFILE=<log to file on SDCard>
   CPUFREQ=<virtual CPU frequency in Hz>
+  CGA=<Emulate CGA adapter 0/1 >

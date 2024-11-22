@@ -249,9 +249,9 @@ extern "C" {
 			// This is probably a firmware bug!
 			// The framebuffer should be 32 bit at this point.
 			#if RASPPI == 5
-				#define COLOR(red, green, blue) (((red) & 0x1F) << 11 | ((green) & 0x1F) << 6 | ((blue) & 0x1F))
+				#define RGB555(red, green, blue) (((red) & 0x1F) << 11 | ((green) & 0x1F) << 6 | ((blue) & 0x1F))
 				for (int j = 0; j < width; j++) {
-					((u16*)buffer)[j] = COLOR(rgba[2], rgba[1], rgba[0]);
+					((u16*)buffer)[j] = RGB555(rgba[2] >> 3, rgba[1] >> 3, rgba[0] >> 3);
 					rgba += 4;
 				}
 			#else
