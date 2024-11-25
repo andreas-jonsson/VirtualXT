@@ -32,14 +32,6 @@
 #include <frontend.h>
 #include "keymap.h"
 
-//#define LOGSERIAL
-
-#define DRIVE "SD:"
-#define BIOSIMAGE "GLABIOS.ROM"
-#define SAMPLE_RATE	22050
-#define CHUNK_SIZE 256
-#define AUDIO_LATENCY_MS 10
-
 volatile bool mouse_updated = false;
 struct frontend_mouse_event mouse_state;
 
@@ -47,24 +39,10 @@ volatile bool keyboard_updated = false;
 bool key_states_current[0x100];
 bool key_states[0x100];
 
-struct frontend_video_adapter video_adapter = {0};
-struct frontend_audio_adapter audio_adapter = {0};
-
-unsigned cpu_frequency = VXT_DEFAULT_FREQUENCY;
-
-int screen_width = 0;
-int screen_height = 0;
-
-const unsigned audio_buffer_size = (SAMPLE_RATE / 1000) * AUDIO_LATENCY_MS;
-unsigned audio_buffer_len = 0;
-DMA_BUFFER(short, audio_buffer, audio_buffer_size);
-
 CKernel *CKernel::s_pThis = 0;
-CBcmFrameBuffer *pFrameBuffer = 0;
 CDevice *pUMSD1 = 0;
 
 FIL log_file = {0};
-static CSpinLock log_lock(TASK_LEVEL);
 
 extern "C" {
 	// From joystick.c
@@ -118,42 +96,12 @@ extern "C" {
 		CString str;
 		str.FormatV(fmt, alist);
 
-		// We do not need to use log_lock here.
 		f_write(&log_file, str, str.GetLength(), 0);
 		f_sync(&log_file);
 		
 		va_end(alist);
 		return 0; // Not correct but it will have to do for now.
 	}
-
-#ifdef LOGSERIAL
-	static int dev_logger(const char *fmt, ...) {
-		va_list alist;
-		va_start(alist, fmt);
-
-		static CString string_buffer;
-
-		CString str;
-		str.FormatV(fmt, alist);
-
-		log_lock.Acquire();
-		string_buffer.Append(str);
-		
-		int idx = string_buffer.Find('\n');
-		if (idx >= 0) {
-			char *cstr = new char[idx + 1]; 
-			memcpy(cstr, string_buffer, idx);
-			cstr[idx] = 0;
-			CLogger::Get()->Write("VirtualXT", LogNotice, cstr);
-			string_buffer = &string_buffer[idx + 1];
-			delete[] cstr;
-		}
-		log_lock.Release();
-		
-		va_end(alist);
-		return 0; // Not correct but it will have to do for now.
-	}
-#endif
 
 	static int num_sectors(vxt_system *s, void *fp) {
 		(void)s;
@@ -226,55 +174,11 @@ extern "C" {
 		f_close(&file);
 		return rom;
 	}
-	
-	static int render_callback(int width, int height, const vxt_byte *rgba, void *userdata) {
-		if ((width != screen_width) || (height != screen_height) || !pFrameBuffer) {
-			screen_width = width;
-			screen_height = height;
-
-			if (pFrameBuffer)
-				delete pFrameBuffer;
-
-			pFrameBuffer = new CBcmFrameBuffer((unsigned)width, (unsigned)height, 32);
-
-			if (!pFrameBuffer->Initialize()) {
-				VXT_LOG("Could not set correct ressolution. Fallback to virtual resolution.");
-
-				delete pFrameBuffer;
-				CKernelOptions *opt = (CKernelOptions*)userdata;
-				pFrameBuffer = new CBcmFrameBuffer(opt->GetWidth(), opt->GetHeight(), 32, (unsigned)width, (unsigned)height);
-
-				if (!pFrameBuffer->Initialize()) {
-					VXT_LOG("Could not initialize framebuffer!");
-					delete pFrameBuffer;
-					return -1;
-				}
-			}
-		}
-
-		u8 *buffer = (u8*)(u64)pFrameBuffer->GetBuffer();
-		for (int i = 0; i < height; i++) {
-			// This is probably a firmware bug!
-			// The framebuffer should be 32 bit at this point.
-			#if RASPPI == 5
-				#define RGB555(red, green, blue) (((red) & 0x1F) << 11 | ((green) & 0x1F) << 6 | ((blue) & 0x1F))
-				for (int j = 0; j < width; j++) {
-					((u16*)buffer)[j] = RGB555(rgba[2] >> 3, rgba[1] >> 3, rgba[0] >> 3);
-					rgba += 4;
-				}
-			#else
-				memcpy(buffer, rgba, 4 * width);
-				rgba += 4 * width;
-			#endif
-			buffer += pFrameBuffer->GetPitch();
-		}
-		
-	    return 0;
-	}
 }
 
 CKernel::CKernel(void)
-:	m_CPUThrottle(
+:	m_ShutdownMode(ShutdownNone),
+	m_CPUThrottle(
 		#if RASPPI == 5
 			CPUSpeedUnknown
 		#else
@@ -287,13 +191,12 @@ CKernel::CKernel(void)
 	m_EMMC(&m_Interrupt, &m_Timer, NULL),
 	m_pMouse(0),
 	m_pKeyboard(0),
-	m_ShutdownMode(ShutdownNone),
 	m_pSound(0)
 {
 	// Initialize here to clear screen during boot.
-	pFrameBuffer = new CBcmFrameBuffer(m_Options.GetWidth(), m_Options.GetHeight(), 32);
-	if (!pFrameBuffer->Initialize())
-		delete pFrameBuffer;
+	m_pFrameBuffer = new CBcmFrameBuffer(m_Options.GetWidth(), m_Options.GetHeight(), 32);
+	if (!m_pFrameBuffer->Initialize())
+		delete m_pFrameBuffer;
 
 	for (int i = 0; i < MAX_GAMEPADS; i++)
 		m_pGamePad[i] = 0;
@@ -302,27 +205,22 @@ CKernel::CKernel(void)
 	memset(key_states, 0, sizeof(key_states));
 	memset(key_states_current, 0, sizeof(key_states_current));
 	
-	memset(&video_adapter, 0, sizeof(video_adapter));
-	memset(audio_buffer, 0, audio_buffer_size * 2);
 	s_pThis = this;
 }
 
 CKernel::~CKernel(void) {
-	if (pFrameBuffer)
-		delete pFrameBuffer;
+	if (m_pFrameBuffer)
+		delete m_pFrameBuffer;
 	s_pThis = 0;
 }
 
+CKernel *CKernel::Get(void) {
+	assert(s_pThis);
+	return s_pThis;
+};
+
 boolean CKernel::Initialize(void) {
 	boolean bOK = TRUE;
-	#ifdef LOGSERIAL
-		if (bOK)
-			bOK = m_Serial.Initialize(115200);
-
-		if (bOK)
-			bOK = m_Logger.Initialize(m_DeviceNameService.GetDevice(m_Options.GetLogDevice(), FALSE));
-	#endif
-
 	if (bOK)
 		bOK = m_Interrupt.Initialize();
 
@@ -351,29 +249,20 @@ TShutdownMode CKernel::Run(void) {
 	struct vxt_peripheral *disk = NULL;
 	struct vxt_peripheral *joystick = NULL;
 
-	#ifdef LOGSERIAL
-		vxt_set_logger(&dev_logger);
-	#endif
+	struct frontend_video_adapter video_adapter = {0};
+	struct frontend_audio_adapter audio_adapter = {0};
+	
+	unsigned cpu_frequency = VXT_DEFAULT_FREQUENCY;
 
 	FATFS emmc_fs;
-	FRESULT res = f_mount(&emmc_fs, DRIVE, 1);
-	if (res != FR_OK) {
-		VXT_PRINT("Cannot mout filesystem: ");
-		switch (res) {
-			case FR_INVALID_DRIVE: VXT_PRINT("FR_INVALID_DRIVE\n"); break;
-			case FR_DISK_ERR: VXT_PRINT("FR_DISK_ERR\n"); break;	
-			case FR_NOT_READY: VXT_PRINT("FR_NOT_READY\n"); break;
-			case FR_NOT_ENABLED: VXT_PRINT("FR_NOT_ENABLED\n"); break;
-			case FR_NO_FILESYSTEM: VXT_PRINT("FR_NO_FILESYSTEM\n"); break;
-			default: VXT_PRINT("UNKNOWN ERROR\n");
-		}
+	if (f_mount(&emmc_fs, DRIVE, 1) != FR_OK) {
+		VXT_LOG("Could not mount filesystem: " DRIVE);
+		return (m_ShutdownMode = ShutdownHalt);
 	}
 
-	#ifndef LOGSERIAL
-		const char *log_file_name = m_Options.GetAppOptionString("LOGFILE");
-		if (log_file_name && (f_open(&log_file, log_file_name, FA_WRITE|FA_CREATE_ALWAYS) == FR_OK))
-			vxt_set_logger(&file_logger);
-	#endif
+	const char *log_file_name = m_Options.GetAppOptionString("LOGFILE");
+	if (log_file_name && (f_open(&log_file, log_file_name, FA_WRITE|FA_CREATE_ALWAYS) == FR_OK))
+		vxt_set_logger(&file_logger);
 
 	VXT_LOG("Machine: %s (%s)", CMachineInfo::Get()->GetMachineName(), CMachineInfo::Get()->GetSoCName());
 	
@@ -458,34 +347,25 @@ TShutdownMode CKernel::Run(void) {
 	VXT_LOG("CPU reset!");
 	vxt_system_reset(s);
 
-	CEmuLoop *emuloop = new CEmuLoop(CMemorySystem::Get(), s);
+	CEmuLoop *emuloop = new CEmuLoop(CMemorySystem::Get(), &m_Options, s, m_pFrameBuffer, &video_adapter, m_pSound, &audio_adapter);
 	if (!emuloop->Initialize()) {
 		VXT_LOG("Could not start emulation thread!");
 		return (m_ShutdownMode = ShutdownHalt);
 	}
 
 	assert(CLOCKHZ == 1000000);
-	u64 renderTicks = CTimer::GetClockTicks64();
-	u64 audioTicks = renderTicks;
-	u64 sysTicks = renderTicks;
-	
-	bool usb_updated = false;
+	u64 input_ticks = CTimer::GetClockTicks64();
+	u64 sys_ticks = input_ticks;
 	
 	while (m_ShutdownMode == ShutdownNone) {
 		u64 ticks = CTimer::GetClockTicks64();
 
-		if ((ticks - sysTicks) >= (CLOCKHZ * 2)) { // Runs once every other second.
-			sysTicks = ticks;
+		// Runs once every other second.
+		if ((ticks - sys_ticks) >= (CLOCKHZ * 2)) {
+			sys_ticks = ticks;
 			m_CPUThrottle.SetOnTemperature();
-			usb_updated = m_USBHCI.UpdatePlugAndPlay() || usb_updated;
-		}
 
-		if ((ticks - renderTicks) >= (CLOCKHZ / 60)) {
-			renderTicks = ticks;
-			
-			if (usb_updated) {
-				usb_updated = false;
-			
+			if (m_USBHCI.UpdatePlugAndPlay()) {			
 				if (!m_pKeyboard) {
 					m_pKeyboard = (CUSBKeyboardDevice*)m_DeviceNameService.GetDevice("ukbd1", FALSE);
 					if (m_pKeyboard) {
@@ -525,11 +405,15 @@ TShutdownMode CKernel::Run(void) {
 					}
 				}
 			}
+		}
 
+		if ((ticks - input_ticks) >= (CLOCKHZ / 60)) {
+			input_ticks = ticks;
+			
 			if (m_pKeyboard)
 				m_pKeyboard->UpdateLEDs();
 
-			CEmuLoop::s_SpinLock.Acquire();
+			CEmuLoop::Lock();
 			{
 				if (keyboard_updated) {
 					for (int i = 0; i < 0x100; i++) {
@@ -549,46 +433,17 @@ TShutdownMode CKernel::Run(void) {
 					mouse_push_event(mouse, &mouse_state);
 					mouse_updated = false;
 				}
-
-				video_adapter.snapshot(video_adapter.device);
 			}
-			CEmuLoop::s_SpinLock.Release();
-
-	    	video_adapter.render(video_adapter.device, &render_callback, &m_Options);
-		}
-
-		while ((ticks - audioTicks) >= (CLOCKHZ / SAMPLE_RATE)) {
-			audioTicks += CLOCKHZ / SAMPLE_RATE;
-
-			// Generate audio.
-			if (audio_buffer_len < audio_buffer_size) {
-				CEmuLoop::s_SpinLock.Acquire();
-				{
-					short sample = vxtu_ppi_generate_sample(ppi, SAMPLE_RATE);
-					if (audio_adapter.device)
-						sample += audio_adapter.generate_sample(audio_adapter.device, SAMPLE_RATE);
-					audio_buffer[audio_buffer_len++] = sample;
-				}
-				CEmuLoop::s_SpinLock.Release();
-			}
-
-			// Write audio data to output device.
-			if (m_pSound && m_pSound->IsActive()) {
-				const unsigned samples_needed = m_pSound->GetQueueSizeFrames() - m_pSound->GetQueueFramesAvail();
-
-				if ((audio_buffer_len == audio_buffer_size) || (samples_needed > audio_buffer_len)) {
-					unsigned num_samples = (samples_needed < audio_buffer_len) ? samples_needed : audio_buffer_len;
-					m_pSound->Write((u8*)audio_buffer, num_samples * 2);
-					audio_buffer_len = 0;
-				}
-			}
+			CEmuLoop::Unlock();
 		}
 	}
 
-	// TODO: Stop thread first!
 	delete emuloop;
 
 	vxt_system_destroy(s);
+
+	if (m_pSound)
+		delete m_pSound;
 
 	if (has_floppy) f_close(&floppy_file);
 	if (has_hd) f_close(&hd_file);
@@ -634,8 +489,8 @@ void CKernel::InitializeAudio(void) {
 }
 
 void CKernel::KeyStatusHandlerRaw(unsigned char ucModifiers, const unsigned char RawKeys[6]) {
-	if (keyboard_updated)
-		return;
+	//if (keyboard_updated)
+	//	return;
 
 	memset(key_states, 0, sizeof(key_states));
 	for(int i = 0; i < NUM_MODIFIERS; i++) {
@@ -663,8 +518,8 @@ void CKernel::KeyboardRemovedHandler(CDevice *pDevice, void *pContext) {
 }
 
 void CKernel::MouseStatusHandlerRaw(unsigned nButtons, int nDisplacementX, int nDisplacementY, int nWheelMove) {
-	if (mouse_updated)
-		return;
+	//if (mouse_updated)
+	//	return;
 
 	int btn = (nButtons & MOUSE_BUTTON_LEFT) ? FRONTEND_MOUSE_LEFT : 0;
 	btn |= (nButtons & MOUSE_BUTTON_RIGHT) ? FRONTEND_MOUSE_RIGHT : 0;

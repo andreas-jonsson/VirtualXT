@@ -27,7 +27,6 @@
 #include <circle/devicenameservice.h>
 #include <circle/bcmframebuffer.h>
 #include <circle/screen.h>
-#include <circle/serial.h>
 #include <circle/exceptionhandler.h>
 #include <circle/interrupt.h>
 #include <circle/timer.h>
@@ -54,6 +53,11 @@
 #undef NULL
 #define NULL nullptr
 
+#define DRIVE "SD:"
+#define BIOSIMAGE "GLABIOS.ROM"
+#define SAMPLE_RATE	22050
+#define CHUNK_SIZE 256
+#define AUDIO_LATENCY_MS 10
 #define MAX_GAMEPADS 2
 
 enum TShutdownMode {
@@ -70,6 +74,11 @@ public:
 	boolean Initialize(void);
 	TShutdownMode Run(void);
 
+	static CKernel *Get(void);
+
+	// TODO: Make this priveate and signal other threads instead.
+	volatile TShutdownMode m_ShutdownMode;
+
 private:
 	void InitializeAudio(void);
 
@@ -82,11 +91,9 @@ private:
 	static void GamePadStatusHandler(unsigned nDeviceIndex, const TGamePadState *pState);
 	static void GamePadRemovedHandler(CDevice *pDevice, void *pContext);
 
-	// Do not change this order!
 	CKernelOptions		m_Options;
 	CDeviceNameService	m_DeviceNameService;
 	CCPUThrottle 		m_CPUThrottle;
-	CSerialDevice		m_Serial;
 	CExceptionHandler	m_ExceptionHandler;
 	CInterruptSystem	m_Interrupt;
 	CTimer				m_Timer;
@@ -102,9 +109,9 @@ private:
 	CMouseDevice *volatile m_pMouse;
 	CUSBKeyboardDevice *volatile m_pKeyboard;
 	CUSBGamePadDevice * volatile m_pGamePad[MAX_GAMEPADS];
-	volatile TShutdownMode m_ShutdownMode;
 
 	CSoundBaseDevice *m_pSound;
+	CBcmFrameBuffer *m_pFrameBuffer;
 
 	static CKernel *s_pThis;
 };

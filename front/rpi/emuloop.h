@@ -20,6 +20,7 @@
 //    distribution.
 
 #include "kernel.h"
+#include <frontend.h>
 
 #ifndef _EMULOOP_H_
 #define _EMULOOP_H_
@@ -31,15 +32,30 @@
 class CEmuLoop : public CMultiCoreSupport
 {
 public:
-	CEmuLoop(CMemorySystem *mem, vxt_system *s);
+	CEmuLoop(CMemorySystem *mem, CKernelOptions *opt, vxt_system *s,
+		CBcmFrameBuffer *fb, struct frontend_video_adapter *va, CSoundBaseDevice *snd, struct frontend_audio_adapter *aa);
 	~CEmuLoop(void);
 
 	void Run(unsigned nCore);
 
-	static CSpinLock s_SpinLock;
+	static void Lock(void);
+	static void Unlock(void);
 
+	static CBcmFrameBuffer *s_pFrameBuffer;
+	
 private:
+	void EmuThread(void);
+	void RenderThread(void);
+	void AudioThread(void);	
+
+	CKernelOptions *m_pOptions;
 	vxt_system *m_pSystem;
+	struct frontend_video_adapter *m_pVideoAdapter;
+	CSoundBaseDevice *m_pSound;
+	struct frontend_audio_adapter *m_pAudioAdapter;
+	struct vxt_peripheral *m_pPPI;
+
+	static CSpinLock s_SpinLock;
 };
 
 #endif
