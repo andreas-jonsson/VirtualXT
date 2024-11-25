@@ -109,7 +109,8 @@ extern "C" {
 	}
 
 	static vxt_error read_sector(vxt_system *s, void *fp, unsigned index, vxt_byte *buffer) {
-		(void)s;
+		u64 ticks = CTimer::GetClockTicks64();
+
 		if (fp == pUMSD1) {
 			if (pUMSD1->Seek(index * VXTU_SECTOR_SIZE) < 0)
 				return VXT_USER_ERROR(0);
@@ -128,11 +129,14 @@ extern "C" {
 		UINT out = 0;
 		if (f_read((FIL*)fp, buffer, VXTU_SECTOR_SIZE, &out) != FR_OK)
 			return VXT_USER_ERROR(3);
+
+		vxt_system_wait(s, (CTimer::GetClockTicks64() - ticks) * (vxt_system_frequency(s) / CLOCKHZ));
 		return (out == VXTU_SECTOR_SIZE) ? VXT_NO_ERROR : VXT_USER_ERROR(4);
 	}
 
 	static vxt_error write_sector(vxt_system *s, void *fp, unsigned index, const vxt_byte *buffer) {
-		(void)s;
+		u64 ticks = CTimer::GetClockTicks64();
+
 		if (fp == pUMSD1) {
 			if (pUMSD1->Seek(index * VXTU_SECTOR_SIZE) < 0)
 				return VXT_USER_ERROR(0);
@@ -151,7 +155,10 @@ extern "C" {
 			return VXT_USER_ERROR(3);
 		if (out != VXTU_SECTOR_SIZE)
 			return VXT_USER_ERROR(4);
-		return (f_sync((FIL*)fp) == FR_OK) ? VXT_NO_ERROR : VXT_USER_ERROR(5);
+
+		vxt_error err = (f_sync((FIL*)fp) == FR_OK) ? VXT_NO_ERROR : VXT_USER_ERROR(5);
+		vxt_system_wait(s, (CTimer::GetClockTicks64() - ticks) * (vxt_system_frequency(s) / CLOCKHZ));
+		return err;
 	}
 
 	static struct vxt_peripheral *load_bios(const char *filename, vxt_pointer base) {

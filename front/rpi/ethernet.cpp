@@ -19,6 +19,7 @@
 // 3. This notice may not be removed or altered from any source
 //    distribution.
 
+#include <circle/timer.h>
 #include <circle/synchronize.h>
 #include <circle/netdevice.h>
 
@@ -106,6 +107,7 @@ static vxt_byte in(struct ethernet *n, vxt_word port) {
 static void out(struct ethernet *n, vxt_word port, vxt_byte data) {
 	(void)port; (void)data;
 	vxt_system *s = VXT_GET_SYSTEM(n);
+	u64 ticks = CTimer::GetClockTicks64();
 	struct vxt_registers *r = vxt_system_registers(s);
 
 	if (!n->link_up) {
@@ -220,6 +222,8 @@ static void out(struct ethernet *n, vxt_word port, vxt_byte data) {
 			r->dh = BAD_COMMAND;
 			return;
 	}
+
+	vxt_system_wait(s, (CTimer::GetClockTicks64() - ticks) * (vxt_system_frequency(s) / CLOCKHZ));
 }
 
 static vxt_error reset(struct ethernet *n, struct ethernet *state) {
@@ -237,6 +241,8 @@ static const char *name(struct ethernet *n) {
 
 static vxt_error timer(struct ethernet *n, vxt_timer_id id, int cycles) {
 	(void)cycles;
+	u64 ticks = CTimer::GetClockTicks64();
+	vxt_system *s = VXT_GET_SYSTEM(n);
 
 	if (id == n->config_timer) {
 		if (!(n->link_up = n->adapter->IsLinkUp()))
@@ -251,7 +257,8 @@ static vxt_error timer(struct ethernet *n, vxt_timer_id id, int cycles) {
 		return VXT_NO_ERROR;
 
 	n->can_recv = false;
-	vxt_system_interrupt(VXT_GET_SYSTEM(n), 6);
+	vxt_system_interrupt(s, 6);
+	vxt_system_wait(s, (CTimer::GetClockTicks64() - ticks) * (vxt_system_frequency(s) / CLOCKHZ));
 	return VXT_NO_ERROR;
 }
 
