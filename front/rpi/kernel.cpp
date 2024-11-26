@@ -354,7 +354,7 @@ TShutdownMode CKernel::Run(void) {
 	VXT_LOG("CPU reset!");
 	vxt_system_reset(s);
 
-	CEmuLoop *emuloop = new CEmuLoop(CMemorySystem::Get(), &m_Options, s, m_pFrameBuffer, &video_adapter, m_pSound, &audio_adapter);
+	CEmuLoop *emuloop = new CEmuLoop(CMemorySystem::Get(), &m_Options, s, m_pFrameBuffer, &video_adapter, m_pSound, &audio_adapter, m_AudioLatency);
 	if (!emuloop->Initialize()) {
 		VXT_LOG("Could not start emulation thread!");
 		return (m_ShutdownMode = ShutdownHalt);
@@ -469,33 +469,39 @@ void CKernel::InitializeAudio(void) {
 		
 	VXT_LOG("Initializing audio...");
 
+	m_AudioLatency = AUDIO_LATENCY_MS;
 	const char *pSoundDevice = m_Options.GetSoundDevice();
+	
 	if (pSoundDevice) {
-		if (!strcmp(pSoundDevice, "sndpwm"))
+		if (!strcmp(pSoundDevice, "sndpwm")) {
 			m_pSound = new CPWMSoundBaseDevice(&m_Interrupt, SAMPLE_RATE, CHUNK_SIZE);	
-		else if (!strcmp(pSoundDevice, "sndhdmi"))
-			m_pSound = new CHDMISoundBaseDevice(&m_Interrupt, SAMPLE_RATE, CHUNK_SIZE);
+		} else if (!strcmp(pSoundDevice, "sndhdmi")) {
+			m_AudioLatency = HDMI_AUDIO_LATENCY_MS;
+			m_pSound = new CHDMISoundBaseDevice(&m_Interrupt, SAMPLE_RATE, HDMI_CHUNK_SIZE);
+		}
 		#if RASPPI >= 4
-			else if (!m_pSound && !strcmp(pSoundDevice, "sndusb"))
+			else if (!m_pSound && !strcmp(pSoundDevice, "sndusb")) {
 				m_pSound = new CUSBSoundBaseDevice(SAMPLE_RATE);
+			}
 		#endif
 	}
 
 	// Use PWM or HDMI as default audio device.
 	if (!m_pSound) {
-		//#if RASPPI <= 4
+		#if RASPPI <= 4
 			pSoundDevice = "sndpwm";
 			m_pSound = new CPWMSoundBaseDevice(&m_Interrupt, SAMPLE_RATE, CHUNK_SIZE);
-		//#else
-		//	pSoundDevice = "sndhdmi";
-		//	m_pSound = new CHDMISoundBaseDevice(&m_Interrupt, SAMPLE_RATE, CHUNK_SIZE);
-		//#endif
+		#else
+			pSoundDevice = "sndhdmi";
+			m_AudioLatency = HDMI_AUDIO_LATENCY_MS;
+			m_pSound = new CHDMISoundBaseDevice(&m_Interrupt, SAMPLE_RATE, HDMI_CHUNK_SIZE);
+		#endif
 	}
 	
 	VXT_LOG("Sound device: %s", pSoundDevice);
 	m_pSound->SetWriteFormat(SoundFormatSigned16, 1);
 	
-	if (!m_pSound->AllocateQueue(AUDIO_LATENCY_MS))
+	if (!m_pSound->AllocateQueue(m_AudioLatency))
 		VXT_LOG("Cannot allocate sound queue!");
 
 	if (!m_pSound->Start())

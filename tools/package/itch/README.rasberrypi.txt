@@ -9,6 +9,10 @@ The size of a USB drive when mounted is caped at ~504MB but the actual device
 can be of any size. To prevent disk corruption it is recommended to use FDISK
 in DOS to ensure the correct size and format when using a USB drive.
 
+The keyboard is mapped as a US Model-F keyboard common on PC/XT and AT
+machines in the 80's. This means a lot of "modern" keys do not work since
+PC style USB (and PS2) keyboards are based on the later IBM Model-M.
+
 Ethernet support should work but is not well tested. Run the ETHERNET.BAT
 file on the included disk image to load drivers and launch DHCP server.
 

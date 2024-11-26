@@ -33,7 +33,9 @@ class CEmuLoop : public CMultiCoreSupport
 {
 public:
 	CEmuLoop(CMemorySystem *mem, CKernelOptions *opt, vxt_system *s,
-		CBcmFrameBuffer *fb, struct frontend_video_adapter *va, CSoundBaseDevice *snd, struct frontend_audio_adapter *aa);
+		CBcmFrameBuffer *fb, struct frontend_video_adapter *va, CSoundBaseDevice *snd,
+		struct frontend_audio_adapter *aa, unsigned al);
+
 	~CEmuLoop(void);
 
 	void Run(unsigned nCore);
@@ -55,6 +57,7 @@ private:
 	struct frontend_audio_adapter *m_pAudioAdapter;
 	struct vxt_peripheral *m_pPPI;
 	int m_CPUStepping;
+	unsigned m_AudioLatency;
 
 	static CSpinLock s_SpinLock;
 };

@@ -58,6 +58,8 @@
 #define SAMPLE_RATE	22050
 #define CHUNK_SIZE 256
 #define AUDIO_LATENCY_MS 10
+#define HDMI_CHUNK_SIZE (384 * 10) // Not sure why it has to be this exact size?
+#define HDMI_AUDIO_LATENCY_MS 100
 #define MAX_GAMEPADS 2
 
 enum TShutdownMode {
@@ -108,8 +110,9 @@ private:
 
 	CMouseDevice *volatile m_pMouse;
 	CUSBKeyboardDevice *volatile m_pKeyboard;
-	CUSBGamePadDevice * volatile m_pGamePad[MAX_GAMEPADS];
+	CUSBGamePadDevice *volatile m_pGamePad[MAX_GAMEPADS];
 
+	unsigned m_AudioLatency;
 	CSoundBaseDevice *m_pSound;
 	CBcmFrameBuffer *m_pFrameBuffer;
 

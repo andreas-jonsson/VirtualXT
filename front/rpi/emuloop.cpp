@@ -89,7 +89,8 @@ extern "C" int render_callback(int width, int height, const vxt_byte *rgba, void
 CEmuLoop::CEmuLoop(
 	CMemorySystem *mem, CKernelOptions *opt, vxt_system *s,
 	CBcmFrameBuffer *fb, struct frontend_video_adapter *va,
-	CSoundBaseDevice *snd, struct frontend_audio_adapter *aa)
+	CSoundBaseDevice *snd, struct frontend_audio_adapter *aa,
+	unsigned al)
 :
 	CMultiCoreSupport(mem),
 	m_pOptions(opt),
@@ -97,7 +98,8 @@ CEmuLoop::CEmuLoop(
 	m_pVideoAdapter(va),
 	m_pSound(snd),
 	m_pAudioAdapter(aa),
-	m_pPPI(0)
+	m_pPPI(0),
+	m_AudioLatency(al)
 {
 	assert(CLOCKHZ == 1000000);
 	s_pFrameBuffer = fb;
@@ -107,8 +109,13 @@ CEmuLoop::CEmuLoop(
 	
 	if (!strcmp(step, "DROP"))
 		m_CPUStepping = CPU_STEPPING_DROP;
-	else if (!strcmp(step, "FLOAT"))
-		m_CPUStepping = CPU_STEPPING_FLOAT;
+
+	// TODO: Fix this! FLOAT does not work because other devices add wait states based on real time.
+	//       The solution is for them to stop doing this if we set CPUSTEP=FLOAT.
+	//
+	//else if (!strcmp(step, "FLOAT"))
+	//	m_CPUStepping = CPU_STEPPING_FLOAT;
+	
 	else
 		m_CPUStepping = CPU_STEPPING_FIXED;
 
@@ -213,7 +220,7 @@ void CEmuLoop::AudioThread(void) {
 	
 	VXT_LOG("Audio thread started!");
 
-	const unsigned audio_buffer_size = (SAMPLE_RATE / 1000) * AUDIO_LATENCY_MS;
+	const unsigned audio_buffer_size = (SAMPLE_RATE / 1000) * m_AudioLatency;
 	unsigned audio_buffer_len = 0;
 
 	DMA_BUFFER(short, audio_buffer, audio_buffer_size);
