@@ -223,9 +223,9 @@ VXT_API struct vxt_step vxt_system_step(CONSTP(vxt_system) s, int cycles) {
 		
 		step.cycles += n;
 		step.halted = s->cpu.halt;
-		step.interrupt = step.interrupt;
-		step.int28 = step.int28;
-		step.invalid = step.invalid;
+		step.interrupt = s->cpu.interrupt;
+		step.int28 = s->cpu.int28;
+		step.invalid = s->cpu.invalid;
 
 		if (UNLIKELY((step.err = update_timers(s, n)) != VXT_NO_ERROR))
 			return step;
