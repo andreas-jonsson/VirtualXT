@@ -81,6 +81,7 @@ static void read_opcode(CONSTSP(cpu) p) {
 static void prep_exec(CONSTSP(cpu) p) {
    p->inst_queue_dirty = false;
    p->bus_transfers = 0;
+   p->cycles = 0;
 
    bool trap = (p->regs.flags & VXT_TRAP) != 0;
    bool interrupt = (p->regs.flags & VXT_INTERRUPT) != 0;
@@ -173,8 +174,7 @@ int cpu_step(CONSTSP(cpu) p) {
     return p->cycles;
 }
 
-void cpu_reset_cycle_count(CONSTSP(cpu) p) {
-   p->cycles = 0;
+void cpu_reset_step_flags(CONSTSP(cpu) p) {
    p->interrupt = p->int28 = false;
    p->invalid = false;
 }
@@ -195,7 +195,8 @@ void cpu_reset(CONSTSP(cpu) p) {
 
 	p->regs.debug = false;
 	p->inst_queue_count = 0;
-	cpu_reset_cycle_count(p);
+	p->cycles = 0;
+	cpu_reset_step_flags(p);
 }
 
 vxt_word cpu_segment_read_byte(CONSTSP(cpu) p, vxt_word segment, vxt_word offset) {

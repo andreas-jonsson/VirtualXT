@@ -54,6 +54,7 @@ private:
 	CSoundBaseDevice *m_pSound;
 	struct frontend_audio_adapter *m_pAudioAdapter;
 	struct vxt_peripheral *m_pPPI;
+	int m_CPUStepping;
 
 	static CSpinLock s_SpinLock;
 };

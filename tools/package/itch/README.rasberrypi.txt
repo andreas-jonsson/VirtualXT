@@ -1,5 +1,6 @@
 Copy all files to the root directory of a FAT32 formated SDCard.
-VirtualXT can run on a RasberryPi 3/4/5 although RasberryPi 5 is not well tested.
+VirtualXT can run on RasberryPi 3/4/5, although the RPI3 is on the slow side
+and the RPI5 is not that well tested. So you are best of with a RPI4. :)
 
 The default boot order is SD:A.img, SD:C.img, USB:RAW. Note that USB drives
 are not plug and play. They need to be inserted and removed while the system
@@ -14,10 +15,14 @@ file on the included disk image to load drivers and launch DHCP server.
 If you get stuck with a black screen during boot, try enable logging and
 detatch all USB devices including mouse and keyboard.
 
+On RPI3 you might get better results when gaming if you run with CPUSTEP=DROP.
+This can however break the internal timekeeping for some applications.
+
 VirtualXT specific options in cmdline.txt:
   BOOT=<set boot device, BIOS disk id>
   FD=<floppy image on SDCard>
   HD=<harddrive image on SDCard>
   LOGFILE=<log to file on SDCard>
   CPUFREQ=<virtual CPU frequency in Hz>
+  CPUSTEP=<FIXED/DROP/FLOAT, default is FIXED>
   CGA=<Emulate CGA adapter 0/1 >

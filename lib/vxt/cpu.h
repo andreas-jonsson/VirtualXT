@@ -73,7 +73,7 @@ struct cpu {
 };
 
 void cpu_reset(CONSTSP(cpu) p);
-void cpu_reset_cycle_count(CONSTSP(cpu) p);
+void cpu_reset_step_flags(CONSTSP(cpu) p);
 int cpu_step(CONSTSP(cpu) p);
 
 vxt_word cpu_segment_read_byte(CONSTSP(cpu) p, vxt_word segment, vxt_word offset);

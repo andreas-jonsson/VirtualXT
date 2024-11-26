@@ -371,7 +371,7 @@ TShutdownMode CKernel::Run(void) {
 		if ((ticks - sys_ticks) >= (CLOCKHZ * 2)) {
 			sys_ticks = ticks;
 			m_CPUThrottle.SetOnTemperature();
-
+		
 			if (m_USBHCI.UpdatePlugAndPlay()) {			
 				if (!m_pKeyboard) {
 					m_pKeyboard = (CUSBKeyboardDevice*)m_DeviceNameService.GetDevice("ukbd1", FALSE);
@@ -426,8 +426,10 @@ TShutdownMode CKernel::Run(void) {
 					for (int i = 0; i < 0x100; i++) {
 						bool bnew = key_states[i];
 						bool *bcurrent = &key_states_current[i];
-						
-						if (bnew || (bnew != *bcurrent)) {
+
+						// TODO: Fix key repeat!
+						//if (bnew || (bnew != *bcurrent)) {
+						if (bnew != *bcurrent) {
 							enum vxtu_scancode scan = (enum vxtu_scancode)i;
 							vxtu_ppi_key_event(ppi, bnew ? scan : VXTU_KEY_UP(scan), false);
 						}
@@ -460,6 +462,11 @@ TShutdownMode CKernel::Run(void) {
 }
 
 void CKernel::InitializeAudio(void) {
+	if (m_Options.GetAppOptionDecimal("MUTE", 0)) {
+		VXT_LOG("Audio device muted!");
+		return;
+	}
+		
 	VXT_LOG("Initializing audio...");
 
 	const char *pSoundDevice = m_Options.GetSoundDevice();

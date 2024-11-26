@@ -20,13 +20,19 @@
 //    distribution.
 
 #include "emuloop.h"
+#include <circle/util.h>
 
-#define SYSTEM_STEPS 1
-#define GET_TICKS ( CTimer::GetClockTicks64() * (vxt_system_frequency(m_pSystem) / 1000000) )
+#define CPU_NUM_STEPS 1000
 
 #ifndef ARM_ALLOW_MULTI_CORE
 	#error You need to enable multicore support!
 #endif
+
+enum {
+	CPU_STEPPING_FIXED,
+	CPU_STEPPING_DROP,
+	CPU_STEPPING_FLOAT
+};
 
 CSpinLock CEmuLoop::s_SpinLock(TASK_LEVEL);
 CBcmFrameBuffer *CEmuLoop::s_pFrameBuffer(0);
@@ -96,6 +102,16 @@ CEmuLoop::CEmuLoop(
 	assert(CLOCKHZ == 1000000);
 	s_pFrameBuffer = fb;
 
+	const char *step = opt->GetAppOptionString("CPUSTEP", "FIXED");
+	VXT_LOG("CPU step policy: %s", step);
+	
+	if (!strcmp(step, "DROP"))
+		m_CPUStepping = CPU_STEPPING_DROP;
+	else if (!strcmp(step, "FLOAT"))
+		m_CPUStepping = CPU_STEPPING_FLOAT;
+	else
+		m_CPUStepping = CPU_STEPPING_FIXED;
+
 	for (int i = 1; i < VXT_MAX_PERIPHERALS; i++) {
 		struct vxt_peripheral *device = vxt_system_peripheral(s, (vxt_byte)i);
 		if (device && vxt_peripheral_class(device) == VXT_PCLASS_PPI) {
@@ -130,18 +146,42 @@ void CEmuLoop::Run(unsigned nCore) {
 void CEmuLoop::EmuThread(void) {
 	VXT_LOG("Emulation thread started!");
 
-	u64 virtual_ticks = GET_TICKS;
+	u64 ticks = CTimer::GetClockTicks64();
+	u64 virtual_ticks = ticks * (vxt_system_frequency(m_pSystem) / CLOCKHZ);
+	int nstep = (m_CPUStepping == CPU_STEPPING_FLOAT) ? CPU_NUM_STEPS : (vxt_system_frequency(m_pSystem) / CLOCKHZ);
 	
-	for (u64 cpu_ticks = virtual_ticks; CKernel::Get()->m_ShutdownMode == ShutdownNone; cpu_ticks = GET_TICKS) {
-		if (virtual_ticks < cpu_ticks) {
+	for (u64 cpu_ticks = virtual_ticks; CKernel::Get()->m_ShutdownMode == ShutdownNone;) {
+		if ((virtual_ticks < cpu_ticks) || (m_CPUStepping == CPU_STEPPING_FLOAT)) {
 			Lock();
-			struct vxt_step step = vxt_system_step(m_pSystem, vxt_system_frequency(m_pSystem) / CLOCKHZ);
+			struct vxt_step step = vxt_system_step(m_pSystem, nstep);
 			Unlock();
 
 			if (step.err != VXT_NO_ERROR)
 				VXT_LOG(vxt_error_str(step.err));
-			virtual_ticks += step.cycles;
+
+			switch (m_CPUStepping) {
+				case CPU_STEPPING_FIXED:
+					virtual_ticks += step.cycles;
+					break;
+				case CPU_STEPPING_DROP:
+					virtual_ticks += step.cycles;
+					if (virtual_ticks < cpu_ticks)
+						virtual_ticks = cpu_ticks;
+					break;
+				case CPU_STEPPING_FLOAT:
+					u64 dt = CTimer::GetClockTicks64() - ticks;
+					int freq = 1;
+
+					// Don't go lower then 1MHz
+					if ((u64)step.cycles > dt)
+						freq = step.cycles / dt;
+					vxt_system_set_frequency(m_pSystem, freq * CLOCKHZ);
+					break;
+			}
 		}
+
+		ticks = CTimer::GetClockTicks64();
+		cpu_ticks = ticks * (vxt_system_frequency(m_pSystem) / CLOCKHZ);
 	}
 
 	VXT_LOG("Emulation thread ended!");
@@ -168,6 +208,9 @@ void CEmuLoop::RenderThread(void) {
 }
 
 void CEmuLoop::AudioThread(void) {
+	if (!m_pSound)
+		return;
+	
 	VXT_LOG("Audio thread started!");
 
 	const unsigned audio_buffer_size = (SAMPLE_RATE / 1000) * AUDIO_LATENCY_MS;
@@ -179,8 +222,8 @@ void CEmuLoop::AudioThread(void) {
 	u64 audio_ticks = CTimer::GetClockTicks64();
 
 	for (u64 ticks = audio_ticks; CKernel::Get()->m_ShutdownMode == ShutdownNone; ticks = CTimer::GetClockTicks64()) {
-		while ((ticks - audio_ticks) >= (CLOCKHZ / SAMPLE_RATE)) {
-			audio_ticks += CLOCKHZ / SAMPLE_RATE;
+		if ((ticks - audio_ticks) >= (CLOCKHZ / SAMPLE_RATE)) {
+			audio_ticks = ticks;
 
 			// Generate audio.
 			if (audio_buffer_len < audio_buffer_size) {

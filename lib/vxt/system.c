@@ -215,24 +215,22 @@ VXT_API void vxt_system_reset(CONSTP(vxt_system) s) {
 }
 
 VXT_API struct vxt_step vxt_system_step(CONSTP(vxt_system) s, int cycles) {
-	int oldc = 0;
 	struct vxt_step step = {0};
-	cpu_reset_cycle_count(&s->cpu);
+	cpu_reset_step_flags(&s->cpu);
 
 	for (;;) {
-		int newc = cpu_step(&s->cpu);
-		int c = newc - oldc;
-		oldc = newc;
-		step.cycles += c;
+		int n = cpu_step(&s->cpu);
+		
+		step.cycles += n;
 		step.halted = s->cpu.halt;
-		step.interrupt = s->cpu.interrupt;
-		step.int28 = s->cpu.int28;
-		step.invalid = s->cpu.invalid;
+		step.interrupt = step.interrupt;
+		step.int28 = step.int28;
+		step.invalid = step.invalid;
 
-		if (UNLIKELY((step.err = update_timers(s, c)) != VXT_NO_ERROR))
+		if (UNLIKELY((step.err = update_timers(s, n)) != VXT_NO_ERROR))
 			return step;
 
-		if (newc >= cycles)
+		if (step.cycles >= cycles)
 			return step;
 	}
 }
