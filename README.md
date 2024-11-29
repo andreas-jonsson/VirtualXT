@@ -44,7 +44,7 @@ The emulator is written in C11 and can be compiled with most modern C compilers.
 ```
 git clone https://github.com/andreas-jonsson/virtualxt.git
 cd virtualxt
-premake5 gmake
+premake5 gmake2
 make sdl2-frontend
 ```
 
