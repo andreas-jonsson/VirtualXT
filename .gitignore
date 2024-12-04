@@ -35,6 +35,9 @@ __pycache__
 /modules/*.pdb
 /modules/*.exp
 
+/tools/aspi/*.sys
+/tools/aspi/*.lst
+
 /tools/tests/8088v1/*.json.gz
 /tools/tests/8088v1/*.bin
 /tools/tests/8088v1/8088.json

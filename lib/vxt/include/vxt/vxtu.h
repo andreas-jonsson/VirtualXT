@@ -220,6 +220,8 @@ struct vxtu_disk_interface2 {
 	int (*num_sectors)(vxt_system *s, void *fp);
 };
 
+VXT_API vxt_word vxtu_system_read_word(vxt_system *s, vxt_word seg, vxt_word offset);
+VXT_API void vxtu_system_write_word(vxt_system *s, vxt_word seg, vxt_word offset, vxt_word data);
 VXT_API vxt_byte *vxtu_read_file(vxt_allocator *alloc, const char *file, int *size);
 
 VXT_API struct vxt_peripheral *vxtu_memory_create(vxt_allocator *alloc, vxt_pointer base, int amount, bool read_only);

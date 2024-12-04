@@ -23,7 +23,7 @@
 
 #ifdef VXT_NO_LIBC
 
-vxt_byte *vxtu_read_file(vxt_allocator *alloc, const char *file, int *size) {
+VXT_API vxt_byte *vxtu_read_file(vxt_allocator *alloc, const char *file, int *size) {
     (void)alloc; (void)file; (void)size;
     VXT_LOG("ERROR: libvxt is built with VXT_NO_LIBC!");
     return NULL;
@@ -31,7 +31,7 @@ vxt_byte *vxtu_read_file(vxt_allocator *alloc, const char *file, int *size) {
 
 #else
 
-vxt_byte *vxtu_read_file(vxt_allocator *alloc, const char *file, int *size) {
+VXT_API vxt_byte *vxtu_read_file(vxt_allocator *alloc, const char *file, int *size) {
     vxt_byte *data = NULL;
     FILE *fp = fopen(file, "rb");
     if (!fp)
@@ -57,3 +57,14 @@ error:
 }
 
 #endif
+
+VXT_API vxt_word vxtu_system_read_word(vxt_system *s, vxt_word seg, vxt_word offset) {
+	vxt_word high = vxt_system_read_byte(s, VXT_POINTER(seg, (offset + 1) & 0xFFFF));
+	vxt_word low = vxt_system_read_byte(s, VXT_POINTER(seg, offset));
+	return (high << 8) | low;
+}
+
+VXT_API void vxtu_system_write_word(vxt_system *s, vxt_word seg, vxt_word offset, vxt_word data) {
+	vxt_system_write_byte(s, VXT_POINTER(seg, offset), (vxt_byte)(data & 0xFF));
+	vxt_system_write_byte(s, VXT_POINTER(seg, (offset + 1) & 0xFFFF), (vxt_byte)(data >> 8));
+}
