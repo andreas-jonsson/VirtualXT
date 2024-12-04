@@ -22,12 +22,15 @@
 /*
 References: https://github.com/andreas-jonsson/escsitoolbox
             http://www.frogaspi.org/download/aspi32.pdf
+            https://www.seagate.com/staticfiles/support/disc/manuals/Interface%20manuals/100293068c.pdf
 */
 
 #include <vxt/vxtu.h>
 
 #include "aspi.h"
 #include "scsidefs.h"
+
+#define BLOCK_SIZE 2048
 
 union SRB {
 	struct SRB_Header header;
@@ -41,7 +44,9 @@ union SRB {
 };
 
 struct scsi {
-	int _;
+	FILE *fp;
+	vxt_byte buffer[BLOCK_SIZE];
+	char image_name[256];
 };
 
 static void memread(vxt_system *s, void *dest, vxt_pointer src, int size) {
@@ -62,18 +67,33 @@ static void handle_scsi(struct scsi *a, union SRB *srb) {
 		return;
 	}
 
-	VXT_LOG("SRB_Flags: %X", srb->cmd6.SRB_Flags);
-	VXT_LOG("SRB_SenseLen: %d", srb->cmd6.SRB_SenseLen);
+	if (srb->cmd6.SRB_Flags)
+		VXT_LOG("WARNING: Unhandled SRB flags: %X", srb->cmd6.SRB_Flags);
+
+	const int sense_area_len = srb->cmd6.SRB_SenseLen;
+	SENSE_DATA_FMT *sense_area = (SENSE_DATA_FMT*)(srb->cmd6.CDBByte + srb->cmd6.SRB_CDBLen);
+
+	// Always set this for now.
+	srb->cmd6.SRB_HaStat = HASTAT_OK;
+	srb->cmd6.SRB_TargStat = STATUS_GOOD;
 
 	switch (*srb->cmd6.CDBByte) {
 		case SCSI_TST_U_RDY:
 			srb->cmd6.SRB_Status = SS_COMP;
 			break;
+		case SCSI_REZERO:
+			srb->cmd6.SRB_Status = SS_COMP;
+			break;
+		case SCSI_SEEK6: // We don't need to handle this because most commands specify LBA.
+			srb->cmd6.SRB_Status = SS_COMP;
+			break;
+		case SCSI_REQ_SENSE:
+			memset(sense_area, 0, sense_area_len);
+			srb->cmd6.SRB_Status = SS_COMP;
+			break;
 		case SCSI_INQUIRY:
 		{
-			VXT_LOG("SCSI_INQUIRY - BUFLEN: %d, BUF: %X:%X", srb->cmd6.SRB_BufLen, srb->cmd6.SRB_BufPointer.seg, srb->cmd6.SRB_BufPointer.offset);
-
-			vxt_pointer ptr = VXT_POINTER(srb->cmd6.SRB_BufPointer.seg, srb->cmd6.SRB_BufPointer.offset);
+			const vxt_pointer ptr = VXT_POINTER(srb->cmd6.SRB_BufPointer.seg, srb->cmd6.SRB_BufPointer.offset);
 
 			memwrite(s, ptr, (vxt_byte[]){DTYPE_CDROM}, 1);
 			memwrite(s, ptr + 1, (vxt_byte[]){0x80}, 1); 		// Removable media flag.
@@ -81,20 +101,44 @@ static void handle_scsi(struct scsi *a, union SRB *srb) {
 			memwrite(s, ptr + 16, "VirtualXT CDROM ", 16);
 			memwrite(s, ptr + 32, "1.0 ", 4);
 
-			srb->cmd6.SRB_HaStat = HASTAT_OK;
-			srb->cmd6.SRB_TargStat = STATUS_GOOD;
+			srb->cmd6.SRB_Status = SS_COMP;
+			break;
+		}
+		case SCSI_MODE_SEL6:
+			// TODO: How to handle this?
+			srb->cmd6.SRB_Status = SS_COMP;
+			break;
+		case SCSI_READ6:
+		{
+			const vxt_byte *data = srb->cmd6.CDBByte;
+			vxt_pointer ptr = VXT_POINTER(srb->cmd6.SRB_BufPointer.seg, srb->cmd6.SRB_BufPointer.offset);
+			const unsigned lba = (((unsigned)data[1] & 0x1F) << 16) | ((unsigned)data[2] << 8) | (unsigned)data[3];
+			const unsigned nblock = data[4] ? data[4] : 256;
+
+			if ((nblock * BLOCK_SIZE) > srb->cmd6.SRB_BufLen) {		
+				srb->cmd6.SRB_Status = SS_ERR;
+				return;					
+			}
+			
+			fseek(a->fp, lba * BLOCK_SIZE, SEEK_SET);			
+			for (unsigned i = 0; i < nblock; i++) {
+				fread(a->buffer, BLOCK_SIZE, 1, a->fp);
+				memwrite(s, ptr, a->buffer, BLOCK_SIZE);
+				ptr += BLOCK_SIZE;
+			}
+			
 			srb->cmd6.SRB_Status = SS_COMP;
 			break;
 		}
 		default:
-			VXT_LOG("Unknown SCSI command: %X", *srb->cmd6.CDBByte);
+			VXT_LOG("Unknown SCSI command: %X (%d)", *srb->cmd6.CDBByte, srb->cmd6.SRB_CDBLen);
 			srb->cmd6.SRB_Status = SS_ERR;
 	};
 }
 
 static int handle_aspi(struct scsi *a, vxt_pointer ptr, union SRB *srb) {
 	vxt_system *s = VXT_GET_SYSTEM(a);
-	vxt_byte cmd = srb->header.SRB_Cmd;
+	const vxt_byte cmd = srb->header.SRB_Cmd;
 
 	// We only have one adapter.
 	if (srb->header.SRB_HaId) {
@@ -169,12 +213,12 @@ static vxt_byte in(struct scsi *a, vxt_word port) {
 static void out(struct scsi *a, vxt_word port, vxt_byte data) {
 	(void)port; (void)data;
 	vxt_system *s = VXT_GET_SYSTEM(a);
-	struct vxt_registers *r = vxt_system_registers(s);
+	const struct vxt_registers *r = vxt_system_registers(s);
 
 	// The ASPI interface uses the Pascal calling convension.
-	vxt_word offset = vxtu_system_read_word(s, r->ss, r->sp + 4);
-	vxt_word seg = vxtu_system_read_word(s, r->ss, r->sp + 6);
-	vxt_pointer ptr = VXT_POINTER(seg, offset);
+	const vxt_word offset = vxtu_system_read_word(s, r->ss, r->sp + 4);
+	const vxt_word seg = vxtu_system_read_word(s, r->ss, r->sp + 6);
+	const vxt_pointer ptr = VXT_POINTER(seg, offset);
 
 	union SRB srb = {0};
 	memread(s, &srb, ptr, sizeof(srb.header));
@@ -190,16 +234,20 @@ static vxt_error reset(struct scsi *a, struct scsi *state) {
 }
 
 static const char *name(struct scsi *a) {
-	(void)a; return "ASPI compatible SCSI Adapter";
+	(void)a; return "SCSI Adapter";
 }
 
 static vxt_error install(struct scsi *a, vxt_system *s) {
-	struct vxt_peripheral *p = VXT_GET_PERIPHERAL(a);
-	vxt_system_install_io_at(s, p, 0xB6);
+	a->fp = fopen(a->image_name, "rb");
+	if (!a->fp)
+		return VXT_USER_ERROR(0);
+	
+	vxt_system_install_io_at(s, VXT_GET_PERIPHERAL(a), 0xB6);
 	return VXT_NO_ERROR;
 }
 
 VXTU_MODULE_CREATE(scsi, {
+	strncpy(DEVICE->image_name, ARGS, sizeof(DEVICE->image_name) - 1);
 	PERIPHERAL->install = &install;
 	PERIPHERAL->name = &name;
 	PERIPHERAL->reset = &reset;
