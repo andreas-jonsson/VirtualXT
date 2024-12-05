@@ -27,9 +27,13 @@ References: https://github.com/andreas-jonsson/escsitoolbox
 
 #include <vxt/vxtu.h>
 
+#include <stdlib.h>
+#include <stdio.h>
+
 #include "aspi.h"
 #include "scsidefs.h"
 
+#define ASPI_PORT 0xB6
 #define BLOCK_SIZE 2048
 
 union SRB {
@@ -43,7 +47,7 @@ union SRB {
 	struct SRB_Abort abort;
 };
 
-struct scsi {
+struct cdrom {
 	FILE *fp;
 	vxt_byte buffer[BLOCK_SIZE];
 	char image_name[256];
@@ -54,13 +58,24 @@ static void memread(vxt_system *s, void *dest, vxt_pointer src, int size) {
 		((vxt_byte*)dest)[i] = vxt_system_read_byte(s, src + i);
 }
 
-static void memwrite(vxt_system *s, vxt_pointer dest, void *src, int size) {
+static void memwrite(vxt_system *s, vxt_pointer dest, const void *src, int size) {
 	for (int i = 0; i < size; i++)
 		vxt_system_write_byte(s, dest + i, ((vxt_byte*)src)[i]);
 }
 
-static void handle_scsi(struct scsi *a, union SRB *srb) {
-	vxt_system *s = VXT_GET_SYSTEM(a);
+static bool check_iso(struct cdrom *d) {
+	if (!d->fp)
+		return false;
+	if (fseek(d->fp, 0x8001, SEEK_SET))
+		return false;
+	vxt_byte buffer[5] = {0};
+	if (fread(buffer, 1, 5, d->fp) != 5)
+		return false;
+	return (memcmp(buffer, "CD001", 5) == 0);
+}
+
+static void handle_scsi(struct cdrom *d, union SRB *srb) {
+	vxt_system *s = VXT_GET_SYSTEM(d);
 
 	if (srb->cmd6.SRB_Target || srb->cmd6.SRB_Lun) {
 		srb->cmd6.SRB_Status = SS_NO_DEVICE;
@@ -88,6 +103,7 @@ static void handle_scsi(struct scsi *a, union SRB *srb) {
 			srb->cmd6.SRB_Status = SS_COMP;
 			break;
 		case SCSI_REQ_SENSE:
+			VXT_LOG("Request sense!");
 			memset(sense_area, 0, sense_area_len);
 			srb->cmd6.SRB_Status = SS_COMP;
 			break;
@@ -108,6 +124,16 @@ static void handle_scsi(struct scsi *a, union SRB *srb) {
 			// TODO: How to handle this?
 			srb->cmd6.SRB_Status = SS_COMP;
 			break;
+		case SCSI_LOAD_UN:
+			if (srb->cmd6.CDBByte[4] & 2) {
+				VXT_LOG("Eject media!");
+				if (d->fp) {
+					fclose(d->fp);
+					d->fp = NULL;
+				}
+			}
+			srb->cmd6.SRB_Status = SS_COMP;
+			break;
 		case SCSI_READ6:
 		{
 			const vxt_byte *data = srb->cmd6.CDBByte;
@@ -117,13 +143,24 @@ static void handle_scsi(struct scsi *a, union SRB *srb) {
 
 			if ((nblock * BLOCK_SIZE) > srb->cmd6.SRB_BufLen) {		
 				srb->cmd6.SRB_Status = SS_ERR;
-				return;					
+				return;
 			}
-			
-			fseek(a->fp, lba * BLOCK_SIZE, SEEK_SET);			
+
+			if (!d->fp) {
+				memset(sense_area, 0, sense_area_len);
+				sense_area->ErrorCode = SERROR_CURRENT;
+				sense_area->SenseKey = KEY_NOTREADY;
+
+				srb->cmd6.SRB_TargStat = STATUS_CHKCOND;
+				srb->cmd6.SRB_Status = SS_ERR;
+				return;
+			}
+
+			// TODO: Add more error checking.
+			fseek(d->fp, lba * BLOCK_SIZE, SEEK_SET);			
 			for (unsigned i = 0; i < nblock; i++) {
-				fread(a->buffer, BLOCK_SIZE, 1, a->fp);
-				memwrite(s, ptr, a->buffer, BLOCK_SIZE);
+				fread(d->buffer, BLOCK_SIZE, 1, d->fp);
+				memwrite(s, ptr, d->buffer, BLOCK_SIZE);
 				ptr += BLOCK_SIZE;
 			}
 			
@@ -136,8 +173,8 @@ static void handle_scsi(struct scsi *a, union SRB *srb) {
 	};
 }
 
-static int handle_aspi(struct scsi *a, vxt_pointer ptr, union SRB *srb) {
-	vxt_system *s = VXT_GET_SYSTEM(a);
+static int handle_aspi(struct cdrom *d, vxt_pointer ptr, union SRB *srb) {
+	vxt_system *s = VXT_GET_SYSTEM(d);
 	const vxt_byte cmd = srb->header.SRB_Cmd;
 
 	// We only have one adapter.
@@ -186,7 +223,7 @@ static int handle_aspi(struct scsi *a, vxt_pointer ptr, union SRB *srb) {
 					break;
 			}
 
-			handle_scsi(a, srb);
+			handle_scsi(d, srb);
 			return sz;
 		}
 		case SC_RESET_DEV:
@@ -205,14 +242,14 @@ static int handle_aspi(struct scsi *a, vxt_pointer ptr, union SRB *srb) {
 	return sizeof(srb->header);
 }
 
-static vxt_byte in(struct scsi *a, vxt_word port) {
-	(void)a; (void)port;
+static vxt_byte in(struct cdrom *d, vxt_word port) {
+	(void)d; (void)port;
 	return 0; // Return 0 to indicate that we have a SCSI card.
 }
 
-static void out(struct scsi *a, vxt_word port, vxt_byte data) {
+static void out(struct cdrom *d, vxt_word port, vxt_byte data) {
 	(void)port; (void)data;
-	vxt_system *s = VXT_GET_SYSTEM(a);
+	vxt_system *s = VXT_GET_SYSTEM(d);
 	const struct vxt_registers *r = vxt_system_registers(s);
 
 	// The ASPI interface uses the Pascal calling convension.
@@ -222,35 +259,52 @@ static void out(struct scsi *a, vxt_word port, vxt_byte data) {
 
 	union SRB srb = {0};
 	memread(s, &srb, ptr, sizeof(srb.header));
-	int sz = handle_aspi(a, ptr, &srb);
+	int sz = handle_aspi(d, ptr, &srb);
 	memwrite(s, ptr, &srb, sz);
 }
 
-static vxt_error reset(struct scsi *a, struct scsi *state) {
-	(void)a;
-	if (state)
-		return VXT_CANT_RESTORE;
-	return VXT_NO_ERROR;
+static vxt_error reset(struct cdrom *d, struct cdrom *state) {
+	(void)d;
+	return state ? VXT_CANT_RESTORE : VXT_NO_ERROR;
 }
 
-static const char *name(struct scsi *a) {
-	(void)a; return "SCSI Adapter";
+static const char *name(struct cdrom *d) {
+	(void)d; return "SCSI CD-ROM";
 }
 
-static vxt_error install(struct scsi *a, vxt_system *s) {
-	a->fp = fopen(a->image_name, "rb");
-	if (!a->fp)
-		return VXT_USER_ERROR(0);
+static vxt_error destroy(struct cdrom *d) {
+	if (d->fp)
+		fclose(d->fp);
+    vxt_system_allocator(VXT_GET_SYSTEM(d))(VXT_GET_PERIPHERAL(d), 0);
+    return VXT_NO_ERROR;
+}
+
+static vxt_error install(struct cdrom *d, vxt_system *s) {
+	if (*d->image_name) {
+		if (!(d->fp = fopen(d->image_name, "rb"))) {
+			VXT_LOG("Could not open: %s", d->image_name);
+		} else if (!check_iso(d)) {
+			VXT_LOG("File is not a valid ISO image: %s", d->image_name);
+			fclose(d->fp);
+			d->fp = NULL;
+		}
+	} else {
+		VXT_LOG("No media in drive!");
+	}
 	
-	vxt_system_install_io_at(s, VXT_GET_PERIPHERAL(a), 0xB6);
+	vxt_system_install_io_at(s, VXT_GET_PERIPHERAL(d), ASPI_PORT);
 	return VXT_NO_ERROR;
 }
 
-VXTU_MODULE_CREATE(scsi, {
+VXTU_MODULE_CREATE(cdrom, {
+	// TODO: Currently there is no frontend interface support!
+
 	strncpy(DEVICE->image_name, ARGS, sizeof(DEVICE->image_name) - 1);
+	
 	PERIPHERAL->install = &install;
 	PERIPHERAL->name = &name;
 	PERIPHERAL->reset = &reset;
+	PERIPHERAL->destroy = &destroy;
 	PERIPHERAL->io.in = &in;
 	PERIPHERAL->io.out = &out;
 })
