@@ -37,7 +37,7 @@ struct ppi {
     bool turbo_enabled;
 
     int queue_size;
-    enum vxtu_scancode queue[MAX_EVENTS];
+    vxt_byte queue[MAX_EVENTS];
 
     INT64 spk_sample_index;
 	bool spk_enabled;
@@ -121,7 +121,7 @@ static enum vxt_pclass pclass(struct ppi *c) {
 static vxt_error timer(struct ppi *c, vxt_timer_id id, int cycles) {
     (void)id; (void)cycles;
 	if (c->queue_size && !c->kb_reset) {
-		c->data_port = (vxt_byte)c->queue[0];
+		c->data_port = c->queue[0];
 		memmove(c->queue, &c->queue[1], --c->queue_size);
 		vxt_system_interrupt(VXT_GET_SYSTEM(c), 1);
 	}
@@ -168,13 +168,25 @@ VXT_API struct vxt_peripheral *vxtu_ppi_create(vxt_allocator *alloc) VXT_PERIPHE
 
 VXT_API bool vxtu_ppi_key_event(struct vxt_peripheral *p, enum vxtu_scancode key, bool force) {
     struct ppi *c = VXT_GET_DEVICE(ppi, p);
-    if (c->queue_size < MAX_EVENTS) {
-        c->queue[c->queue_size++] = key;
-        return true;
-    } else if (force) {
-        c->queue[MAX_EVENTS - 1] = key;
-    }
-    return false;
+	vxt_byte arr[4] = {0};
+	int num = 0;
+
+	for (int i = 24; i >= 0; i -= 8) {
+		vxt_byte data = ((vxt_dword)key >> i) & 0xFF;
+		if (data)
+			arr[num++] = data;
+	}
+
+	// Can we write the entire key?
+	if (c->queue_size > (MAX_EVENTS - num)) {
+		if (!force)
+			return false;
+		c->queue_size = MAX_EVENTS - num;
+	}
+
+	for (int i = 0; i < num; i++)
+		c->queue[c->queue_size++] = arr[i];
+    return true;
 }
 
 VXT_API bool vxtu_ppi_turbo_enabled(struct vxt_peripheral *p) {

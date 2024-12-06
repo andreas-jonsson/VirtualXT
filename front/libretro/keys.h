@@ -86,7 +86,7 @@ static enum vxtu_scancode retro_to_xt_scan(enum retro_key key) {
 			return VXTU_SCAN_ENTER;
 		case RETROK_LCTRL:
 		case RETROK_RCTRL:
-			return VXTU_SCAN_CONTROL;
+			return VXTU_SCAN_LCONTROL;
 		case RETROK_a:
 			return VXTU_SCAN_A;
 		case RETROK_s:
@@ -114,7 +114,7 @@ static enum vxtu_scancode retro_to_xt_scan(enum retro_key key) {
 		case RETROK_LSHIFT:
 			return VXTU_SCAN_LSHIFT;
 		case RETROK_BACKSLASH:
-			return VXTU_SCAN_BACKSLASH;
+			return VXTU_SCAN_INT2;
 		case RETROK_z:
 			return VXTU_SCAN_Z;
 		case RETROK_x:
@@ -141,7 +141,7 @@ static enum vxtu_scancode retro_to_xt_scan(enum retro_key key) {
 			return VXTU_SCAN_PRINT;
 		case RETROK_LALT:
 		case RETROK_RALT:
-			return VXTU_SCAN_ALT;
+			return VXTU_SCAN_LALT;
 		case RETROK_SPACE:
 			return VXTU_SCAN_SPACE;
 		case RETROK_CAPSLOCK:

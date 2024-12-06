@@ -80,7 +80,7 @@ static enum vxtu_scancode tb_ch_to_xt_scan(uint32_t ch) {
 			return VXTU_SCAN_ENTER;
 		case SDL_SCANCODE_LCTRL:
 		case SDL_SCANCODE_RCTRL:
-			return VXTU_SCAN_CONTROL;
+			return VXTU_SCAN_LCONTROL;
 		case SDL_SCANCODE_A:
 			return VXTU_SCAN_A;
 		case SDL_SCANCODE_S:
@@ -238,7 +238,7 @@ static enum vxtu_scancode tb_key_to_xt_scan(uint16_t key) {
 			return VXTU_SCAN_ENTER;
 		case SDL_SCANCODE_LCTRL:
 		case SDL_SCANCODE_RCTRL:
-			return VXTU_SCAN_CONTROL;
+			return VXTU_SCAN_LCONTROL;
 		case SDL_SCANCODE_A:
 			return VXTU_SCAN_A;
 		case SDL_SCANCODE_S:

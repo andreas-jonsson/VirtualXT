@@ -226,7 +226,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
     for (i = 0; i < elements->n_options; i++) {
         option = &elements->options[i];
         if (help && option->value && strcmp(option->olong, "--help") == 0) {
-            for (j = 0; j < 20; j++)
+            for (j = 0; j < 21; j++)
                 puts(args->help_message[j]);
             return EXIT_FAILURE;
         } else if (version && option->value &&
@@ -245,6 +245,8 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
             args->hdboot = option->value;
         } else if (strcmp(option->olong, "--help") == 0) {
             args->help = option->value;
+        } else if (strcmp(option->olong, "--kb101") == 0) {
+            args->kb101 = option->value;
         } else if (strcmp(option->olong, "--locate") == 0) {
             args->locate = option->value;
         } else if (strcmp(option->olong, "--mute") == 0) {
@@ -301,7 +303,7 @@ int elems_to_args(struct Elements *elements, struct DocoptArgs *args,
 
 struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *version) {
     struct DocoptArgs args = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, (char *) "10.0", NULL,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, (char *) "10.0", NULL,
         NULL, NULL,
             usage_pattern,
             { "Usage: virtualxt [options]",
@@ -313,6 +315,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
               "  --halt                  Debug break on startup.",
               "  --mute                  Disable audio.",
               "  --a20                   Enable support for A20 line.",
+              "  --kb101                 US 101 Model-M keyboard layout. (Require BIOS support)",
               "  --no-activity           Disable disk activity indicator.",
               "  --no-idle               Disable CPU idle on INT28.",
               "  --clean                 Remove config file and write a new default one.",
@@ -336,6 +339,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
         {NULL, "--halt", 0, 0, NULL},
         {NULL, "--hdboot", 0, 0, NULL},
         {"-h", "--help", 0, 0, NULL},
+        {NULL, "--kb101", 0, 0, NULL},
         {NULL, "--locate", 0, 0, NULL},
         {NULL, "--mute", 0, 0, NULL},
         {NULL, "--no-activity", 0, 0, NULL},
@@ -353,7 +357,7 @@ struct DocoptArgs docopt(int argc, char *argv[], const bool help, const char *ve
 
     elements.n_commands = 0;
     elements.n_arguments = 0;
-    elements.n_options = 17;
+    elements.n_options = 18;
     elements.commands = commands;
     elements.arguments = arguments;
     elements.options = options;

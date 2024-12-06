@@ -7,6 +7,7 @@ Options:
   --halt                  Debug break on startup.
   --mute                  Disable audio.
   --a20                   Enable support for A20 line.
+  --kb101                 US 101 Model-M keyboard layout. (Require BIOS support)
   --no-activity           Disable disk activity indicator.
   --no-idle               Disable CPU idle on INT28.
   --clean                 Remove config file and write a new default one.

@@ -747,6 +747,7 @@ static bool write_default_config(const char *path, bool clean) {
 		";halt=1\n"
 		";hdboot=1\n"
 		";a20=1\n"
+		";kb101=1\n"
 		";harddrive=boot/freedos_hd.img\n"
 		"\n[ch36x_isa]\n"
 		"port=0x201\n"
@@ -1022,6 +1023,8 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+	enum vxtu_scancode (*convert_scancode)(SDL_Scancode) = args.kb101 ? &sdl_to_model_m : &sdl_to_model_f;
+	
 	print_memory_map(vxt);
 
 	vxt_system_reset(vxt);
@@ -1127,7 +1130,7 @@ int main(int argc, char *argv[]) {
 				}
 				case SDL_KEYDOWN:
 					if (!has_open_windows && keyboard_controller.device && (e.key.keysym.sym != SDLK_F11) && (e.key.keysym.sym != SDLK_F12))
-						SYNC(keyboard_controller.push_event(keyboard_controller.device, sdl_to_xt_scan(e.key.keysym.scancode), false));
+						SYNC(keyboard_controller.push_event(keyboard_controller.device, convert_scancode(e.key.keysym.scancode), false));
 					break;
 				case SDL_KEYUP:
 					if (e.key.keysym.sym == SDLK_F11) {
@@ -1155,7 +1158,7 @@ int main(int argc, char *argv[]) {
 					}
 
 					if (!has_open_windows && keyboard_controller.device)
-						SYNC(keyboard_controller.push_event(keyboard_controller.device, sdl_to_xt_scan(e.key.keysym.scancode) | VXTU_KEY_UP_MASK, false));
+						SYNC(keyboard_controller.push_event(keyboard_controller.device, convert_scancode(e.key.keysym.scancode) | VXTU_KEY_UP_MASK, false));
 					break;
 			}
 		}

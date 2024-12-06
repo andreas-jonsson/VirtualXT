@@ -24,11 +24,11 @@
 
 #define NUM_MODIFIERS 9
 enum vxtu_scancode modifierToXT[NUM_MODIFIERS] = {
-	VXTU_SCAN_CONTROL,		// ModifierKeyLeftCtrl
+	VXTU_SCAN_LCONTROL,		// ModifierKeyLeftCtrl
 	VXTU_SCAN_LSHIFT,		// ModifierKeyLeftShift
 	VXTU_SCAN_ALT,			// ModifierKeyAlt
 	VXTU_SCAN_INVALID,		// ModifierKeyLeftWin
-	VXTU_SCAN_CONTROL,		// ModifierKeyRightCtrl
+	VXTU_SCAN_LCONTROL,		// ModifierKeyRightCtrl
 	VXTU_SCAN_RSHIFT,		// ModifierKeyRightShift
 	VXTU_SCAN_ALT,			// ModifierKeyAltGr
 	VXTU_SCAN_INVALID,		// ModifierKeyRightWin
@@ -260,11 +260,11 @@ enum vxtu_scancode usbToXT[256] = {
 	VXTU_SCAN_INVALID,		// USB dd	(none)
 	VXTU_SCAN_INVALID,		// USB de	(none)
 	VXTU_SCAN_INVALID,		// USB df	(none)
-	VXTU_SCAN_CONTROL,		// USB e0	ControlLeft
+	VXTU_SCAN_LCONTROL,		// USB e0	ControlLeft
 	VXTU_SCAN_LSHIFT,		// USB e1	ShiftLeft
 	VXTU_SCAN_ALT,			// USB e2	AltLeft
 	VXTU_SCAN_INVALID,		// USB e3	OSLeft
-	VXTU_SCAN_CONTROL,		// USB e4	ControlRight
+	VXTU_SCAN_LCONTROL,		// USB e4	ControlRight
 	VXTU_SCAN_RSHIFT,		// USB e5	ShiftRight
 	VXTU_SCAN_ALT,			// USB e6	AltRight
 	VXTU_SCAN_INVALID,		// USB e7	OSRight
