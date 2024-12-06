@@ -91,7 +91,7 @@ Macros</h2></td></tr>
 <tr class="separator:a3fff8082902c9af3063b8d8cc3a37daa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9e056a6f11b996dcd8f34ba2dbbb2387"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a9e056a6f11b996dcd8f34ba2dbbb2387">vxtu_static_allocator</a>(name,  size)</td></tr>
 <tr class="separator:a9e056a6f11b996dcd8f34ba2dbbb2387"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0507a7e5502d836ebbc352b301dabbfd"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a0507a7e5502d836ebbc352b301dabbfd">VXTU_KEY_UP</a>(scan)&#160;&#160;&#160;((enum <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98f">vxtu_scancode</a>)((int)(scan) | VXTU_KEY_UP_MASK))</td></tr>
+<tr class="memitem:a0507a7e5502d836ebbc352b301dabbfd"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a0507a7e5502d836ebbc352b301dabbfd">VXTU_KEY_UP</a>(scan)&#160;&#160;&#160;((enum <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98f">vxtu_scancode</a>)((<a class="el" href="vxt_8h.html#a1c42ca54bcee0c9fd5c01b5b3c076276">vxt_dword</a>)(scan) | VXTU_KEY_UP_MASK))</td></tr>
 <tr class="separator:a0507a7e5502d836ebbc352b301dabbfd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae64145ceab07dc88898aa811b9966f57"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#ae64145ceab07dc88898aa811b9966f57">VXTU_SECTOR_SIZE</a>&#160;&#160;&#160;512</td></tr>
 <tr class="separator:ae64145ceab07dc88898aa811b9966f57"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -106,110 +106,134 @@ Typedefs</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
 <tr class="memitem:aa29e455bcd0f1a145978cdecce90e98f"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98f">vxtu_scancode</a> { <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faf595ce7f18df1ccff1035078816d9183">VXTU_SCAN_INVALID</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa8499be21a62eeeb5de8f298de7ee929a">VXTU_SCAN_ESCAPE</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa8b0b87ca007d9c066f1a13fc7a04a8e2">VXTU_SCAN_1</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa3c3e20ed4ed62bb8e4c604fbac888cb">VXTU_SCAN_2</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faf595ce7f18df1ccff1035078816d9183">VXTU_SCAN_INVALID</a> = 0x0
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa8499be21a62eeeb5de8f298de7ee929a">VXTU_SCAN_ESCAPE</a> = 0x1
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa8b0b87ca007d9c066f1a13fc7a04a8e2">VXTU_SCAN_1</a> = 0x2
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa3c3e20ed4ed62bb8e4c604fbac888cb">VXTU_SCAN_2</a> = 0x3
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa4e520ff381270cc3088663fe748c24ea">VXTU_SCAN_3</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa9e62c6e500fc459b685b0d4f17f69c10">VXTU_SCAN_4</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faf39129f4dbacf99af6a788eb5ec3e766">VXTU_SCAN_5</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98facadcda0c360e844792a55b46ec9134f4">VXTU_SCAN_6</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa4e520ff381270cc3088663fe748c24ea">VXTU_SCAN_3</a> = 0x4
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa9e62c6e500fc459b685b0d4f17f69c10">VXTU_SCAN_4</a> = 0x5
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faf39129f4dbacf99af6a788eb5ec3e766">VXTU_SCAN_5</a> = 0x6
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98facadcda0c360e844792a55b46ec9134f4">VXTU_SCAN_6</a> = 0x7
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa6dc02b89e8591721596a486f29ee9a7f">VXTU_SCAN_7</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa1d63e5e4447b911631a615bc8707b755">VXTU_SCAN_8</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa7b859d271c818b90c216c035bbffa446">VXTU_SCAN_9</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fab1b8ce0ecf0a4f254a6b0630c5ed3380">VXTU_SCAN_0</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa6dc02b89e8591721596a486f29ee9a7f">VXTU_SCAN_7</a> = 0x8
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa1d63e5e4447b911631a615bc8707b755">VXTU_SCAN_8</a> = 0x9
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa7b859d271c818b90c216c035bbffa446">VXTU_SCAN_9</a> = 0xA
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fab1b8ce0ecf0a4f254a6b0630c5ed3380">VXTU_SCAN_0</a> = 0xB
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa97ab1f2178f504217ef3dac6e4d55fcb">VXTU_SCAN_MINUS</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa8ced95606e406f0a126bd5904cbf0e41">VXTU_SCAN_EQUAL</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa741d0069576cc6f12a1aa0ed545c7da6">VXTU_SCAN_BACKSPACE</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa3d46f019fc8660554ef8e3d79fd2d80e">VXTU_SCAN_TAB</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa97ab1f2178f504217ef3dac6e4d55fcb">VXTU_SCAN_MINUS</a> = 0xC
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa8ced95606e406f0a126bd5904cbf0e41">VXTU_SCAN_EQUAL</a> = 0xD
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa741d0069576cc6f12a1aa0ed545c7da6">VXTU_SCAN_BACKSPACE</a> = 0xE
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa3d46f019fc8660554ef8e3d79fd2d80e">VXTU_SCAN_TAB</a> = 0xF
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa8bdb97d4da4fc29747df83af22abcc41">VXTU_SCAN_Q</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa583ee342f3f79db7d3ee908bde4244c3">VXTU_SCAN_W</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fad5c3c348a90645d8b4b5153f95eaabf0">VXTU_SCAN_E</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fadb08b2de06cadd2f7aa6bba8b130e3d5">VXTU_SCAN_R</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa8bdb97d4da4fc29747df83af22abcc41">VXTU_SCAN_Q</a> = 0x10
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa583ee342f3f79db7d3ee908bde4244c3">VXTU_SCAN_W</a> = 0x11
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fad5c3c348a90645d8b4b5153f95eaabf0">VXTU_SCAN_E</a> = 0x12
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fadb08b2de06cadd2f7aa6bba8b130e3d5">VXTU_SCAN_R</a> = 0x13
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa028c562603c66ea6ae67803da7999156">VXTU_SCAN_T</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fad2cf3a74605a7d0ee8860ac1d25b6ea1">VXTU_SCAN_Y</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fac3f00fb319d8c6fb08e93798a586d92f">VXTU_SCAN_U</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa1ca5505cb7776a71e49ce853e7afc560">VXTU_SCAN_I</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa028c562603c66ea6ae67803da7999156">VXTU_SCAN_T</a> = 0x14
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fad2cf3a74605a7d0ee8860ac1d25b6ea1">VXTU_SCAN_Y</a> = 0x15
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fac3f00fb319d8c6fb08e93798a586d92f">VXTU_SCAN_U</a> = 0x16
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa1ca5505cb7776a71e49ce853e7afc560">VXTU_SCAN_I</a> = 0x17
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa0a3f210221f6dc25f3c61c56eb15900d">VXTU_SCAN_O</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa28471b725c8176bb81b95d273b63627d">VXTU_SCAN_P</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa56ed97d0d80cb0817d5c7f220ed20923">VXTU_SCAN_LBRACKET</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa6538333b08b10af255b9575956f6b690">VXTU_SCAN_RBRACKET</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa0a3f210221f6dc25f3c61c56eb15900d">VXTU_SCAN_O</a> = 0x18
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa28471b725c8176bb81b95d273b63627d">VXTU_SCAN_P</a> = 0x19
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa56ed97d0d80cb0817d5c7f220ed20923">VXTU_SCAN_LBRACKET</a> = 0x1A
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa6538333b08b10af255b9575956f6b690">VXTU_SCAN_RBRACKET</a> = 0x1B
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa3dd9fca3172ed141ac978716d6559530">VXTU_SCAN_ENTER</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fafe023ef46b55e4b850c60e5a15405da3">VXTU_SCAN_CONTROL</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa586c2633690562f13af8dd8014b2611e">VXTU_SCAN_A</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa7a7622f37b9382e6ddfac4d168ee7a48">VXTU_SCAN_S</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa3dd9fca3172ed141ac978716d6559530">VXTU_SCAN_ENTER</a> = 0x1C
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa3935b1b2819c4ad59ca9449bb3d2e970">VXTU_SCAN_LCONTROL</a> = 0x1D
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa586c2633690562f13af8dd8014b2611e">VXTU_SCAN_A</a> = 0x1E
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa7a7622f37b9382e6ddfac4d168ee7a48">VXTU_SCAN_S</a> = 0x1F
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa0ad39e46668b58d7640fc35857b73fba">VXTU_SCAN_D</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fab4c10047e8c46010ad527e42253a5c77">VXTU_SCAN_F</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faaaede6df68bfdefeefa1089202ddc3bd">VXTU_SCAN_G</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa7394bf5f104872826ac9195023b10581">VXTU_SCAN_H</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa0ad39e46668b58d7640fc35857b73fba">VXTU_SCAN_D</a> = 0x20
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fab4c10047e8c46010ad527e42253a5c77">VXTU_SCAN_F</a> = 0x21
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faaaede6df68bfdefeefa1089202ddc3bd">VXTU_SCAN_G</a> = 0x22
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa7394bf5f104872826ac9195023b10581">VXTU_SCAN_H</a> = 0x23
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa9449d7db634aab42bbcb132d8753de86">VXTU_SCAN_J</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faecc1f47eb91f4ee9a053b9209033c908">VXTU_SCAN_K</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa48c3c1761be79ca5dd41aa07915ea4ce">VXTU_SCAN_L</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa4b120f1f453586b1f638e8b48daf0fe8">VXTU_SCAN_SEMICOLON</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa9449d7db634aab42bbcb132d8753de86">VXTU_SCAN_J</a> = 0x24
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faecc1f47eb91f4ee9a053b9209033c908">VXTU_SCAN_K</a> = 0x25
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa48c3c1761be79ca5dd41aa07915ea4ce">VXTU_SCAN_L</a> = 0x26
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa4b120f1f453586b1f638e8b48daf0fe8">VXTU_SCAN_SEMICOLON</a> = 0x27
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa983f967eebb29af801c7a84795b964a1">VXTU_SCAN_QUOTE</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa82dba10a70fe5ede6576fee2a1fdc047">VXTU_SCAN_BACKQUOTE</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa48225537b74b614134cff1a20733a14d">VXTU_SCAN_LSHIFT</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa56e0b5b161490b5333533e0c3e98412a">VXTU_SCAN_BACKSLASH</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa983f967eebb29af801c7a84795b964a1">VXTU_SCAN_QUOTE</a> = 0x28
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa82dba10a70fe5ede6576fee2a1fdc047">VXTU_SCAN_BACKQUOTE</a> = 0x29
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa48225537b74b614134cff1a20733a14d">VXTU_SCAN_LSHIFT</a> = 0x2A
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa67ffc8ac1c4ec8a0c4a0a240f50ddcd3">VXTU_SCAN_INT2</a> = 0x2B
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa4f1dd4b6daf628dbfed6bdea559221b0">VXTU_SCAN_Z</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa776f252f4a5f43c7ba33c429b107e0d1">VXTU_SCAN_X</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa2f8f087173a207b860096053d70d9e3a">VXTU_SCAN_C</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa79ce2b9c0d26a77c9da01e5173f247fc">VXTU_SCAN_V</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa4f1dd4b6daf628dbfed6bdea559221b0">VXTU_SCAN_Z</a> = 0x2C
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa776f252f4a5f43c7ba33c429b107e0d1">VXTU_SCAN_X</a> = 0x2D
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa2f8f087173a207b860096053d70d9e3a">VXTU_SCAN_C</a> = 0x2E
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa79ce2b9c0d26a77c9da01e5173f247fc">VXTU_SCAN_V</a> = 0x2F
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa13fc3a9cbec3e0d6fda569ef50f9c2b3">VXTU_SCAN_B</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa65de54ee42213ef01f2106ce8f5c7ad">VXTU_SCAN_N</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fab8f878584ee0bec89f406ca5f9ec83bd">VXTU_SCAN_M</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faf14d304dfb48c7bc327822c4f254d645">VXTU_SCAN_COMMA</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa13fc3a9cbec3e0d6fda569ef50f9c2b3">VXTU_SCAN_B</a> = 0x30
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa65de54ee42213ef01f2106ce8f5c7ad">VXTU_SCAN_N</a> = 0x31
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fab8f878584ee0bec89f406ca5f9ec83bd">VXTU_SCAN_M</a> = 0x32
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faf14d304dfb48c7bc327822c4f254d645">VXTU_SCAN_COMMA</a> = 0x33
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fad411ef99019066f5251e05aef9075a78">VXTU_SCAN_PERIOD</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa94110f2158708d3a93a7171b1fa297f">VXTU_SCAN_SLASH</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa566dccb87ffc34fdf48c61f20185f678">VXTU_SCAN_RSHIFT</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa2de47bde85ec38554906dd48a2bcf3e">VXTU_SCAN_PRINT</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fad411ef99019066f5251e05aef9075a78">VXTU_SCAN_PERIOD</a> = 0x34
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa94110f2158708d3a93a7171b1fa297f">VXTU_SCAN_SLASH</a> = 0x35
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa566dccb87ffc34fdf48c61f20185f678">VXTU_SCAN_RSHIFT</a> = 0x36
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa2de47bde85ec38554906dd48a2bcf3e">VXTU_SCAN_PRINT</a> = 0x37
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa02ea5310e52607cf50c65a9e8c31ff0e">VXTU_SCAN_ALT</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa5f109dce7c82955f6480ee4144c15d58">VXTU_SCAN_SPACE</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa0114c73c45c7c5d516be3e82e2274f30">VXTU_SCAN_CAPSLOCK</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa0f499ebafc7124f20c26913197e0457f">VXTU_SCAN_F1</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa9616ed53c59b194600bc5b87cc2cd022">VXTU_SCAN_LALT</a> = 0x38
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa5f109dce7c82955f6480ee4144c15d58">VXTU_SCAN_SPACE</a> = 0x39
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa0114c73c45c7c5d516be3e82e2274f30">VXTU_SCAN_CAPSLOCK</a> = 0x3A
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa0f499ebafc7124f20c26913197e0457f">VXTU_SCAN_F1</a> = 0x3B
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faca470a675a22a732a51ba971e4af07f5">VXTU_SCAN_F2</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faed0d62d8c5b79088fb8720e46cdf0712">VXTU_SCAN_F3</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa9d871d17364b89a5bf031944126bf8c7">VXTU_SCAN_F4</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa9da0456219a97f7f4bbb0775d1a1eaa7">VXTU_SCAN_F5</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faca470a675a22a732a51ba971e4af07f5">VXTU_SCAN_F2</a> = 0x3C
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faed0d62d8c5b79088fb8720e46cdf0712">VXTU_SCAN_F3</a> = 0x3D
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa9d871d17364b89a5bf031944126bf8c7">VXTU_SCAN_F4</a> = 0x3E
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa9da0456219a97f7f4bbb0775d1a1eaa7">VXTU_SCAN_F5</a> = 0x3F
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa06efd8cc6486aff50dfa49fc1026743">VXTU_SCAN_F6</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fac6fec490edc367afa3d337fb32cdb42b">VXTU_SCAN_F7</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa254fdf0bbd764a751694839d6ec4837e">VXTU_SCAN_F8</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa3102e4043b7bef8af9b8449f9c403751">VXTU_SCAN_F9</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa06efd8cc6486aff50dfa49fc1026743">VXTU_SCAN_F6</a> = 0x40
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fac6fec490edc367afa3d337fb32cdb42b">VXTU_SCAN_F7</a> = 0x41
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa254fdf0bbd764a751694839d6ec4837e">VXTU_SCAN_F8</a> = 0x42
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa3102e4043b7bef8af9b8449f9c403751">VXTU_SCAN_F9</a> = 0x43
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fade5d272cb626c76c534d58e71204d84a">VXTU_SCAN_F10</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa2923cafbec27d4b666e74061057b742a">VXTU_SCAN_NUMLOCK</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faf2092b3334f9c4e5c0cec1ec1fa73afe">VXTU_SCAN_SCRLOCK</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa3e7c3deec7941cbe7db34e9dba63d5c">VXTU_SCAN_KP_HOME</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fade5d272cb626c76c534d58e71204d84a">VXTU_SCAN_F10</a> = 0x44
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa2923cafbec27d4b666e74061057b742a">VXTU_SCAN_NUMLOCK</a> = 0x45
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faf2092b3334f9c4e5c0cec1ec1fa73afe">VXTU_SCAN_SCRLOCK</a> = 0x46
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa3e7c3deec7941cbe7db34e9dba63d5c">VXTU_SCAN_KP_HOME</a> = 0x47
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fac74d5f95fb912e8b7457cd88ee55c83d">VXTU_SCAN_KP_UP</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa121b24f2ab09d0038e8def0abadcda6b">VXTU_SCAN_KP_PAGEUP</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fab981e2af564618762c1e533290daa0ba">VXTU_SCAN_KP_MINUS</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa5cc891aed81555ddc594a13d1afa8e8">VXTU_SCAN_KP_LEFT</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fac74d5f95fb912e8b7457cd88ee55c83d">VXTU_SCAN_KP_UP</a> = 0x48
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa121b24f2ab09d0038e8def0abadcda6b">VXTU_SCAN_KP_PAGEUP</a> = 0x49
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fab981e2af564618762c1e533290daa0ba">VXTU_SCAN_KP_MINUS</a> = 0x4A
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa5cc891aed81555ddc594a13d1afa8e8">VXTU_SCAN_KP_LEFT</a> = 0x4B
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa5948ac868029f81a8b701b3cb66b0bb9">VXTU_SCAN_KP_5</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faac7dfa7f7e77e2bc7f7d3afc1b7a5ad5">VXTU_SCAN_KP_RIGHT</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa5a14096c4e20c0d603b191612ec56941">VXTU_SCAN_KP_PLUS</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fad7bb0843ff4a0a746d42650697ef8199">VXTU_SCAN_KP_END</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa5948ac868029f81a8b701b3cb66b0bb9">VXTU_SCAN_KP_5</a> = 0x4C
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faac7dfa7f7e77e2bc7f7d3afc1b7a5ad5">VXTU_SCAN_KP_RIGHT</a> = 0x4D
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa5a14096c4e20c0d603b191612ec56941">VXTU_SCAN_KP_PLUS</a> = 0x4E
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fad7bb0843ff4a0a746d42650697ef8199">VXTU_SCAN_KP_END</a> = 0x4F
 , <br />
-&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa8836e0ae7c311e3045088c7cc35cbf25">VXTU_SCAN_KP_DOWN</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa2b0b686dd613adba35256c7eb5bebde9">VXTU_SCAN_KP_PAGEDOWN</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fae5f9f8a4576a47f46d06ce3c2ef6aaad">VXTU_SCAN_KP_INSERT</a>
-, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa02dc620b739049ec3cc84d4aa6dc6b2">VXTU_SCAN_KP_DELETE</a>
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa8836e0ae7c311e3045088c7cc35cbf25">VXTU_SCAN_KP_DOWN</a> = 0x50
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa2b0b686dd613adba35256c7eb5bebde9">VXTU_SCAN_KP_PAGEDOWN</a> = 0x51
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fae5f9f8a4576a47f46d06ce3c2ef6aaad">VXTU_SCAN_KP_INSERT</a> = 0x52
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa02dc620b739049ec3cc84d4aa6dc6b2">VXTU_SCAN_KP_DELETE</a> = 0x53
+, <br />
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa78182605d2a1cffce2553f2453e7a01">VXTU_SCAN_SYS_REQ</a> = 0x54
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fab91d2c5667ead5912783003292a03248">VXTU_SCAN_F11</a> = 0x57
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa1ff5f6e250cc21e7de80195b5819d018">VXTU_SCAN_F12</a> = 0x58
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98facaa88751c7b740d3127769795e07df07">VXTU_SCAN_KP_ENTER</a> = 0xE01C
+, <br />
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa5174a8cf5ad83f5c9e82c3b6cec672d5">VXTU_SCAN_RCONTROL</a> = 0xE01D
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa8ca431d16bad8c89d7c83d7d21263b1b">VXTU_SCAN_KP_DIV</a> = 0xE035
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faa3c15742a4cdb26b14835894061ffb06">VXTU_SCAN_KP_MUL</a> = 0xE037
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa37a837fcbd99ebf5148d51eb9873a915">VXTU_SCAN_RALT</a> = 0xE038
+, <br />
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa261735a57b58db7b7b7104a0740c6c38">VXTU_SCAN_HOME</a> = 0xE047
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa4ae96c7a4e306504be1f19a60013ce05">VXTU_SCAN_UP</a> = 0xE048
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fadfa69f6b2dd77106a4dcbeac9710101c">VXTU_SCAN_PAGEUP</a> = 0xE049
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa5a8f640a25b62858626661eac4cbc3ef">VXTU_SCAN_LEFT</a> = 0xE04B
+, <br />
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa3e2df57b646bfea73742facf196e04d0">VXTU_SCAN_RIGHT</a> = 0xE04D
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98faabc1e9360a5bde7005d6bca4199eceb9">VXTU_SCAN_END</a> = 0xE04F
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa7679391b8f4538b22929d91e2ec2b9f1">VXTU_SCAN_DOWN</a> = 0xE050
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa240ceef3de624d000ec9794dbb86af67">VXTU_SCAN_PAGEDOWN</a> = 0xE051
+, <br />
+&#160;&#160;<a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa8636dcd4aa052d6c334e483161381a30">VXTU_SCAN_INSERT</a> = 0xE052
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa22e4f1b40b08638afc0a370c15995d2c">VXTU_SCAN_DELETE</a> = 0xE053
+, <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98fa8aa9274a6a0883319324830ad714b97c">VXTU_SCAN_INT1</a> = 0x56
 <br />
  }</td></tr>
 <tr class="separator:aa29e455bcd0f1a145978cdecce90e98f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -227,6 +251,10 @@ Enumerations</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:a5fd0218d9f495723273f675100e8cd78"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vxt_8h.html#aad167b1b5e0e0e81742dc83e84838cb0">VXT_API</a> <a class="el" href="vxt_8h.html#a8ddd768ac3f172fef269e0cab64baa12">vxt_word</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a5fd0218d9f495723273f675100e8cd78">vxtu_system_read_word</a> (<a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *s, <a class="el" href="vxt_8h.html#a8ddd768ac3f172fef269e0cab64baa12">vxt_word</a> seg, <a class="el" href="vxt_8h.html#a8ddd768ac3f172fef269e0cab64baa12">vxt_word</a> offset)</td></tr>
+<tr class="separator:a5fd0218d9f495723273f675100e8cd78"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e4fe61cbdfff48151f194bf56aa8f3c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vxt_8h.html#aad167b1b5e0e0e81742dc83e84838cb0">VXT_API</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a9e4fe61cbdfff48151f194bf56aa8f3c">vxtu_system_write_word</a> (<a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *s, <a class="el" href="vxt_8h.html#a8ddd768ac3f172fef269e0cab64baa12">vxt_word</a> seg, <a class="el" href="vxt_8h.html#a8ddd768ac3f172fef269e0cab64baa12">vxt_word</a> offset, <a class="el" href="vxt_8h.html#a8ddd768ac3f172fef269e0cab64baa12">vxt_word</a> data)</td></tr>
+<tr class="separator:a9e4fe61cbdfff48151f194bf56aa8f3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a527e59321e6858de8d4aca71ddf6498b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vxt_8h.html#aad167b1b5e0e0e81742dc83e84838cb0">VXT_API</a> <a class="el" href="vxt_8h.html#a2236a1c7fabb4e887ef168a3e721fa08">vxt_byte</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#a527e59321e6858de8d4aca71ddf6498b">vxtu_read_file</a> (<a class="el" href="vxt_8h.html#ac10b97a0ac675a0471f30c4432a64190">vxt_allocator</a> *alloc, const char *file, int *size)</td></tr>
 <tr class="separator:a527e59321e6858de8d4aca71ddf6498b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aae62bfd1db77555e53da85420515e347"><td class="memItemLeft" align="right" valign="top"><a class="el" href="vxt_8h.html#aad167b1b5e0e0e81742dc83e84838cb0">VXT_API</a> struct vxt_peripheral *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="vxtu_8h.html#aae62bfd1db77555e53da85420515e347">vxtu_memory_create</a> (<a class="el" href="vxt_8h.html#ac10b97a0ac675a0471f30c4432a64190">vxt_allocator</a> *alloc, <a class="el" href="vxt_8h.html#acdaa6dbd7750ec3dcc0d0e822dba8ea6">vxt_pointer</a> base, int amount, bool read_only)</td></tr>
@@ -336,7 +364,7 @@ Functions</h2></td></tr>
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname">scan</td><td>)</td>
-          <td>&#160;&#160;&#160;((enum <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98f">vxtu_scancode</a>)((int)(scan) | VXTU_KEY_UP_MASK))</td>
+          <td>&#160;&#160;&#160;((enum <a class="el" href="vxtu_8h.html#aa29e455bcd0f1a145978cdecce90e98f">vxtu_scancode</a>)((<a class="el" href="vxt_8h.html#a1c42ca54bcee0c9fd5c01b5b3c076276">vxt_dword</a>)(scan) | VXTU_KEY_UP_MASK))</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -616,7 +644,7 @@ Functions</h2></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa56ed97d0d80cb0817d5c7f220ed20923"></a>VXTU_SCAN_LBRACKET&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa6538333b08b10af255b9575956f6b690"></a>VXTU_SCAN_RBRACKET&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa3dd9fca3172ed141ac978716d6559530"></a>VXTU_SCAN_ENTER&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fafe023ef46b55e4b850c60e5a15405da3"></a>VXTU_SCAN_CONTROL&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa3935b1b2819c4ad59ca9449bb3d2e970"></a>VXTU_SCAN_LCONTROL&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa586c2633690562f13af8dd8014b2611e"></a>VXTU_SCAN_A&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa7a7622f37b9382e6ddfac4d168ee7a48"></a>VXTU_SCAN_S&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa0ad39e46668b58d7640fc35857b73fba"></a>VXTU_SCAN_D&#160;</td><td class="fielddoc"></td></tr>
@@ -630,7 +658,7 @@ Functions</h2></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa983f967eebb29af801c7a84795b964a1"></a>VXTU_SCAN_QUOTE&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa82dba10a70fe5ede6576fee2a1fdc047"></a>VXTU_SCAN_BACKQUOTE&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa48225537b74b614134cff1a20733a14d"></a>VXTU_SCAN_LSHIFT&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa56e0b5b161490b5333533e0c3e98412a"></a>VXTU_SCAN_BACKSLASH&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa67ffc8ac1c4ec8a0c4a0a240f50ddcd3"></a>VXTU_SCAN_INT2&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa4f1dd4b6daf628dbfed6bdea559221b0"></a>VXTU_SCAN_Z&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa776f252f4a5f43c7ba33c429b107e0d1"></a>VXTU_SCAN_X&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa2f8f087173a207b860096053d70d9e3a"></a>VXTU_SCAN_C&#160;</td><td class="fielddoc"></td></tr>
@@ -643,7 +671,7 @@ Functions</h2></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98faa94110f2158708d3a93a7171b1fa297f"></a>VXTU_SCAN_SLASH&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa566dccb87ffc34fdf48c61f20185f678"></a>VXTU_SCAN_RSHIFT&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98faa2de47bde85ec38554906dd48a2bcf3e"></a>VXTU_SCAN_PRINT&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa02ea5310e52607cf50c65a9e8c31ff0e"></a>VXTU_SCAN_ALT&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa9616ed53c59b194600bc5b87cc2cd022"></a>VXTU_SCAN_LALT&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa5f109dce7c82955f6480ee4144c15d58"></a>VXTU_SCAN_SPACE&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa0114c73c45c7c5d516be3e82e2274f30"></a>VXTU_SCAN_CAPSLOCK&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa0f499ebafc7124f20c26913197e0457f"></a>VXTU_SCAN_F1&#160;</td><td class="fielddoc"></td></tr>
@@ -671,6 +699,25 @@ Functions</h2></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa2b0b686dd613adba35256c7eb5bebde9"></a>VXTU_SCAN_KP_PAGEDOWN&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fae5f9f8a4576a47f46d06ce3c2ef6aaad"></a>VXTU_SCAN_KP_INSERT&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98faa02dc620b739049ec3cc84d4aa6dc6b2"></a>VXTU_SCAN_KP_DELETE&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98faa78182605d2a1cffce2553f2453e7a01"></a>VXTU_SCAN_SYS_REQ&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fab91d2c5667ead5912783003292a03248"></a>VXTU_SCAN_F11&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa1ff5f6e250cc21e7de80195b5819d018"></a>VXTU_SCAN_F12&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98facaa88751c7b740d3127769795e07df07"></a>VXTU_SCAN_KP_ENTER&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa5174a8cf5ad83f5c9e82c3b6cec672d5"></a>VXTU_SCAN_RCONTROL&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa8ca431d16bad8c89d7c83d7d21263b1b"></a>VXTU_SCAN_KP_DIV&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98faa3c15742a4cdb26b14835894061ffb06"></a>VXTU_SCAN_KP_MUL&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa37a837fcbd99ebf5148d51eb9873a915"></a>VXTU_SCAN_RALT&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa261735a57b58db7b7b7104a0740c6c38"></a>VXTU_SCAN_HOME&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa4ae96c7a4e306504be1f19a60013ce05"></a>VXTU_SCAN_UP&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fadfa69f6b2dd77106a4dcbeac9710101c"></a>VXTU_SCAN_PAGEUP&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa5a8f640a25b62858626661eac4cbc3ef"></a>VXTU_SCAN_LEFT&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa3e2df57b646bfea73742facf196e04d0"></a>VXTU_SCAN_RIGHT&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98faabc1e9360a5bde7005d6bca4199eceb9"></a>VXTU_SCAN_END&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa7679391b8f4538b22929d91e2ec2b9f1"></a>VXTU_SCAN_DOWN&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa240ceef3de624d000ec9794dbb86af67"></a>VXTU_SCAN_PAGEDOWN&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa8636dcd4aa052d6c334e483161381a30"></a>VXTU_SCAN_INSERT&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa22e4f1b40b08638afc0a370c15995d2c"></a>VXTU_SCAN_DELETE&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="aa29e455bcd0f1a145978cdecce90e98fa8aa9274a6a0883319324830ad714b97c"></a>VXTU_SCAN_INT1&#160;</td><td class="fielddoc"></td></tr>
 </table>
 
 </div>
@@ -1301,6 +1348,80 @@ Functions</h2></td></tr>
           <td></td>
           <td class="paramtype">int *&#160;</td>
           <td class="paramname"><em>size</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a5fd0218d9f495723273f675100e8cd78"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5fd0218d9f495723273f675100e8cd78">&#9670;&nbsp;</a></span>vxtu_system_read_word()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="vxt_8h.html#aad167b1b5e0e0e81742dc83e84838cb0">VXT_API</a> <a class="el" href="vxt_8h.html#a8ddd768ac3f172fef269e0cab64baa12">vxt_word</a> vxtu_system_read_word </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *&#160;</td>
+          <td class="paramname"><em>s</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="vxt_8h.html#a8ddd768ac3f172fef269e0cab64baa12">vxt_word</a>&#160;</td>
+          <td class="paramname"><em>seg</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="vxt_8h.html#a8ddd768ac3f172fef269e0cab64baa12">vxt_word</a>&#160;</td>
+          <td class="paramname"><em>offset</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a9e4fe61cbdfff48151f194bf56aa8f3c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9e4fe61cbdfff48151f194bf56aa8f3c">&#9670;&nbsp;</a></span>vxtu_system_write_word()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="vxt_8h.html#aad167b1b5e0e0e81742dc83e84838cb0">VXT_API</a> void vxtu_system_write_word </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="vxt_8h.html#ab32d007ba08cc6202817ca09d15cf802">vxt_system</a> *&#160;</td>
+          <td class="paramname"><em>s</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="vxt_8h.html#a8ddd768ac3f172fef269e0cab64baa12">vxt_word</a>&#160;</td>
+          <td class="paramname"><em>seg</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="vxt_8h.html#a8ddd768ac3f172fef269e0cab64baa12">vxt_word</a>&#160;</td>
+          <td class="paramname"><em>offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="vxt_8h.html#a8ddd768ac3f172fef269e0cab64baa12">vxt_word</a>&#160;</td>
+          <td class="paramname"><em>data</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
