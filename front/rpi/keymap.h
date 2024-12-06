@@ -26,11 +26,11 @@
 enum vxtu_scancode modifierToXT[NUM_MODIFIERS] = {
 	VXTU_SCAN_LCONTROL,		// ModifierKeyLeftCtrl
 	VXTU_SCAN_LSHIFT,		// ModifierKeyLeftShift
-	VXTU_SCAN_ALT,			// ModifierKeyAlt
+	VXTU_SCAN_LALT,			// ModifierKeyAlt
 	VXTU_SCAN_INVALID,		// ModifierKeyLeftWin
 	VXTU_SCAN_LCONTROL,		// ModifierKeyRightCtrl
 	VXTU_SCAN_RSHIFT,		// ModifierKeyRightShift
-	VXTU_SCAN_ALT,			// ModifierKeyAltGr
+	VXTU_SCAN_LALT,			// ModifierKeyAltGr
 	VXTU_SCAN_INVALID,		// ModifierKeyRightWin
 	VXTU_SCAN_INVALID		// ModifierKeyUnknown
 };
@@ -85,7 +85,7 @@ enum vxtu_scancode usbToXT[256] = {
 	VXTU_SCAN_EQUAL,		// USB 2e	Equal
 	VXTU_SCAN_LBRACKET,		// USB 2f	BracketLeft
 	VXTU_SCAN_RBRACKET,		// USB 30	BracketRight
-	VXTU_SCAN_BACKSLASH,	// USB 31	Backslash
+	VXTU_SCAN_INT2,			// USB 31	Backslash
 	VXTU_SCAN_INVALID,		// USB 32	(none)
 	VXTU_SCAN_SEMICOLON,	// USB 33	Semicolon
 	VXTU_SCAN_QUOTE,		// USB 34	Quote
