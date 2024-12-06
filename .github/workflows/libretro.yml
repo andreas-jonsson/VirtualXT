@@ -11,8 +11,8 @@ on:
 env:
   VXT_VERSION: 1.2.0
   ZIG_VERSION: 0.13.0
-  ZIG_ARCHS: "x86_64-linux-gnu i386-linux-gnu aarch64-linux-gnu arm-linux-gnueabi x86_64-macos-none aarch64-macos-none"
-  NDK_VERSION: r20
+  ZIG_ARCHS: "x86_64-linux-gnu i686-linux-gnu aarch64-linux-gnu arm-linux-gnueabi riscv64-linux-gnu x86_64-macos-none aarch64-macos-none"
+  NDK_VERSION: r27c
   NDK_ARCHS: "aarch64-linux-android armv7a-linux-androideabi x86_64-linux-android i686-linux-android"
 
 jobs:
