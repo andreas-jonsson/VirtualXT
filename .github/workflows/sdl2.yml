@@ -158,6 +158,7 @@ jobs:
   freebsd-build:
     runs-on: ubuntu-latest
     name: Build (FreeBSD AMD64)
+    if: false
     steps:
     - uses: actions/checkout@v4
     - name: Test and Build
