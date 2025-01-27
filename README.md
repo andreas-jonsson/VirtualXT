@@ -3,7 +3,7 @@
 [![Build](https://github.com/andreas-jonsson/virtualxt/actions/workflows/sdl2.yml/badge.svg)](https://github.com/andreas-jonsson/virtualxt/actions/workflows/sdl2.yml)
 [![Codecov](https://codecov.io/gh/andreas-jonsson/virtualxt/branch/develop/graph/badge.svg?token=HD9I58ZGG5)](https://codecov.io/gh/andreas-jonsson/virtualxt)
 [![Packages](https://repology.org/badge/tiny-repos/virtualxt.svg?header=packages)](https://repology.org/project/virtualxt/versions)
-[![Chat](https://img.shields.io/matrix/virtualxt:matrix.org)](https://matrix.to/#/#virtualxt:matrix.org)
+[![Chat](https://badgen.net/badge/icon/discord?icon=discord&label)](https://discord.com/channels/1333142665566617710/1333166999844687942)
 [![Support](https://github.com/BoostIO/issuehunt-materials/raw/master/v1/issuehunt-shield-v1.svg)](https://issuehunt.io/r/andreas-jonsson/virtualxt)
 
 VirtualXT is a Turbo PC/XT emulator that runs on modern hardware, operating systems and bare-metal ARM SBCs.
