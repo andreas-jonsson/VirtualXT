@@ -149,7 +149,7 @@ setup:
 	curl -L -o odin.zip https://github.com/odin-lang/Odin/releases/download/$(ODIN_VERSION)/odin-linux-amd64-$(ODIN_VERSION).zip && unzip odin.zip
 
 $(OBJECTS): setup
-	PATH=$(PATH):$(PWD)/odin-linux-amd64-$(ODIN_VERSION) $(MAKE) -C $(CORE_DIR) release
+	export PATH=$(PATH):$(PWD)/odin-linux-amd64-$(ODIN_VERSION) && $(MAKE) -C $(CORE_DIR) release
 	cp $(CORE_DIR)$(TARGET) .
 
 $(TARGET): $(OBJECTS)
