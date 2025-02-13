@@ -91,6 +91,7 @@ libretro-build-windows-i686:
 # Linux 64-bit
 libretro-build-linux-x64:
   only:
+    - develop
     - edge
     - release
   extends:

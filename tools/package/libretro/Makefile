@@ -141,6 +141,8 @@ else
    CFLAGS += -O3 -DNDEBUG
 endif
 
+OBJECTS = $(TARGET_NAME)_libretro.o
+
 all: $(TARGET)
 
 setup:
