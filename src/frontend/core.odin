@@ -39,7 +39,7 @@ import "modules:ems"
 import retro "vxt:frontend/libretro"
 import "vxt:machine"
 
-VXT_VERSION :: "1.4.0"
+VXT_VERSION :: "1.3.0"
 MAX_DISK_IMAGES :: 256
 AUDIO_FREQUENCY :: 44100
 DEFAULT_DISK_IMAGE :: "boot:svardos_hd.img"
