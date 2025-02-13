@@ -1,7 +1,7 @@
 # VirtualXT
 
 [![Build](https://github.com/virtualxt/virtualxt/actions/workflows/libretro.yml/badge.svg)](https://github.com/virtualxt/virtualxt/actions/workflows/sdl2.yml)
-[![Chat](https://img.shields.io/matrix/virtualxt:matrix.org)](https://matrix.to/#/#virtualxt:matrix.org)
+[![Chat](https://badgen.net/badge/icon/discord?icon=discord&label)](https://discord.com/channels/1333142665566617710/1333166999844687942)
 [![Support](https://github.com/BoostIO/issuehunt-materials/raw/master/v1/issuehunt-shield-v1.svg)](https://issuehunt.io/r/virtualxt/virtualxt)
 
 VirtualXT is a [libretro](https://www.libretro.com) Turbo PC/XT emulator that runs on modern hardware, operating systems and bare-metal ARM SBCs.
