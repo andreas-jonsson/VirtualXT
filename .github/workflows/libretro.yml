@@ -97,7 +97,6 @@ jobs:
 
   macos-amd64-build:
     name: Build (MacOS AMD64)
-    if: false
     runs-on: macos-13
 
     steps:

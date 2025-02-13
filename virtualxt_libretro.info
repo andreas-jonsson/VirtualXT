@@ -28,4 +28,4 @@ hw_render = "false"
 needs_fullpath = "true"
 disk_control = "true"
 
-description = "VirtualXT is a libretro Turbo PC/XT emulator that runs on modern hardware and operating systems. It is designed to be simple and lightweight yet still capable enough to run a large library of old application and games."
+description = "VirtualXT is a Turbo PC/XT emulator for libretro that runs on modern hardware and operating systems. It is designed to be simple and lightweight yet still capable enough to run a large library of old application and games."
