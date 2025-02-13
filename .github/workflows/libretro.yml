@@ -2,22 +2,60 @@ name: Libretro
 
 on:
   push:
-    branches: [ "develop", "edge", "release" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "develop" ]
+    branches: [ "main" ]
 
   workflow_dispatch:
 
 env:
-  VXT_VERSION: 1.3.0
-  ZIG_VERSION: 0.13.0
-  ZIG_ARCHS: "x86_64-linux-gnu aarch64-linux-gnu arm-linux-gnueabi x86_64-macos-none aarch64-macos-none"
+  VXT_VERSION: 1.4.0
+  ODIN_VERSION: dev-2025-02
   NDK_VERSION: r27c
-  NDK_ARCHS: "aarch64-linux-android armv7a-linux-androideabi x86_64-linux-android"
 
 jobs:
-  libretro-build:
-    name: Libretro
+  linux-amd64-build:
+    name: Build (Linux AMD64)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: Setup
+        run: |
+          rm -rf odin; mkdir odin
+          curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip -d butler
+          curl -L -o odin.zip https://github.com/odin-lang/Odin/releases/download/${ODIN_VERSION}/odin-linux-amd64-${ODIN_VERSION}.zip && unzip odin.zip
+          echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
+          echo "${GITHUB_WORKSPACE}/odin-linux-amd64-${ODIN_VERSION}" >> $GITHUB_PATH
+
+      - name: Test
+        run: make tests
+        
+      - name: Build
+        run: make release
+
+      - name: Deploy
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          if [[ $GITHUB_REF_NAME =~ ^(main)$ ]]; then
+            PACKAGE="${GITHUB_WORKSPACE}/package"
+            rm -rf $PACKAGE
+            mkdir $PACKAGE
+            cp virtualxt_libretro.so $PACKAGE
+            cp virtualxt_libretro.info $PACKAGE
+            butler login
+            butler push $PACKAGE phix/virtualxt:odin-linux-amd64-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
+          fi
+
+  windows-amd64-build:
+    name: Build (Windows AMD64)
     runs-on: windows-latest
 
     defaults:
@@ -32,67 +70,151 @@ jobs:
       - name: Inject slug/short variables
         uses: rlespinasse/github-slug-action@v3.x
 
-      - name: MSYS2
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: base-devel mingw-w64-x86_64-toolchain
-      
       - name: Setup
         run: |
-          curl -L -o ndk.zip https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-windows.zip && unzip ndk.zip
-          curl -L -o butler.zip https://broth.itch.ovh/butler/windows-amd64/LATEST/archive/default && unzip butler.zip -d butler
-          curl -L -o premake5.zip https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-windows.zip && mkdir premake5 && unzip premake5.zip -d premake5
-          curl -L -o zig.zip https://ziglang.org/download/${ZIG_VERSION}/zig-windows-x86_64-${ZIG_VERSION}.zip && unzip zig.zip
-
-          echo "${GITHUB_WORKSPACE}/zig-windows-x86_64-${ZIG_VERSION}" >> $GITHUB_PATH
-          echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
+          rm -rf odin
+          curl -L -o butler.zip https://broth.itch.ovh/butler/windows-amd64/LATEST/archive/default && 7z x butler.zip -obutler
+          curl -L -o odin.zip https://github.com/odin-lang/Odin/releases/download/${ODIN_VERSION}/odin-windows-amd64-${ODIN_VERSION}.zip && 7z x odin.zip
           echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
+          echo "${GITHUB_WORKSPACE}/odin-windows-amd64-${ODIN_VERSION}" >> $GITHUB_PATH
 
-          mkdir -p package/virtualxt
-          cp front/libretro/*.info package/virtualxt
-
-      - name: Test
-        shell: msys2 {0}
-        run: |
-          PATH="${GITHUB_WORKSPACE}/premake5":"$PATH"
-          premake5 --test --cc=gcc gmake
-          make clean test
-      
-      - name: Build (Windows)
-        shell: msys2 {0}
-        run: |
-          PATH="${GITHUB_WORKSPACE}/premake5":"$PATH"
-          premake5 --no-modules --cc=gcc gmake
-          make clean libretro-frontend
-          mkdir package/virtualxt/x86_64-windows-gnu
-          cp build/libretro/*.dll package/virtualxt/x86_64-windows-gnu
-
-      - name: Build (Android)
-        env:
-          CLANG_PATH: "./android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/windows-x86_64/bin"
-        run: |
-          premake5 --no-modules --cc=clang --os=android gmake
-          for arch in ${NDK_ARCHS}; do
-            echo Building ${arch}...
-            rm -rf build/libretro
-            make CC="${CLANG_PATH}/${arch}21-clang" LD="${CLANG_PATH}/llvm-ld" AR="${CLANG_PATH}/llvm-ar" clean libretro-frontend
-            mkdir package/virtualxt/${arch}
-            cp build/libretro/*.so package/virtualxt/${arch}
-          done
-
-      - name: Build (Unix)
-        run: |
-          premake5 --no-modules --cc=clang --os=linux gmake
-          for arch in ${ZIG_ARCHS}; do
-            echo Building ${arch}...
-            rm -rf build/libretro
-            make CC="zig cc -target ${arch}" AR="zig ar" RANLIB="zig ranlib" clean libretro-frontend
-            mkdir package/virtualxt/${arch}
-            cp build/libretro/*.so package/virtualxt/${arch}
-          done
-
-      - name: Package & Deploy
+      - name: Build
+        run: "${GITHUB_WORKSPACE}/Makefile.bat"
+        
+      - name: Deploy
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-        run: if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then ./tools/package/itch/push-libretro.sh; fi
+        run: |
+          if [[ $GITHUB_REF_NAME =~ ^(main)$ ]]; then
+            PACKAGE="${GITHUB_WORKSPACE}/package"
+            rm -rf $PACKAGE
+            mkdir $PACKAGE
+            cp virtualxt_libretro.dll $PACKAGE
+            cp virtualxt_libretro.info $PACKAGE
+            butler login
+            butler push $PACKAGE phix/virtualxt:odin-windows-amd64-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
+          fi
+
+  macos-amd64-build:
+    name: Build (MacOS AMD64)
+    if: false
+    runs-on: macos-13
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: Setup
+        run: |
+          rm -rf odin; mkdir odin
+          curl -L -o butler.zip https://broth.itch.ovh/butler/darwin-amd64/LATEST/archive/default && unzip butler.zip -d butler
+          curl -L -o odin.zip https://github.com/odin-lang/Odin/releases/download/${ODIN_VERSION}/odin-macos-amd64-${ODIN_VERSION}.zip && unzip odin.zip
+          echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
+          echo "${GITHUB_WORKSPACE}/odin-macos-amd64-${ODIN_VERSION}" >> $GITHUB_PATH
+
+      - name: Test
+        run: make tests
+        
+      - name: Build
+        run: make release
+
+      - name: Deploy
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          if [[ $GITHUB_REF_NAME =~ ^(main)$ ]]; then
+            PACKAGE="${GITHUB_WORKSPACE}/package"
+            rm -rf $PACKAGE
+            mkdir $PACKAGE
+            cp virtualxt_libretro.dylib $PACKAGE
+            cp virtualxt_libretro.info $PACKAGE
+            butler login
+            butler push $PACKAGE phix/virtualxt:odin-macos-amd64-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
+          fi
+
+  macos-arm64-build:
+    name: Build (MacOS ARM64)
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: Setup
+        run: |
+          rm -rf odin; mkdir odin
+          curl -L -o butler.zip https://broth.itch.ovh/butler/darwin-amd64/LATEST/archive/default && unzip butler.zip -d butler
+          curl -L -o odin.zip https://github.com/odin-lang/Odin/releases/download/${ODIN_VERSION}/odin-macos-arm64-${ODIN_VERSION}.zip && unzip odin.zip
+          echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
+          echo "${GITHUB_WORKSPACE}/odin-macos-arm64-${ODIN_VERSION}" >> $GITHUB_PATH
+
+      - name: Test
+        run: make tests
+        
+      - name: Build
+        run: make release
+
+      - name: Deploy
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          if [[ $GITHUB_REF_NAME =~ ^(main)$ ]]; then
+            PACKAGE="${GITHUB_WORKSPACE}/package"
+            rm -rf $PACKAGE
+            mkdir $PACKAGE
+            cp virtualxt_libretro.dylib $PACKAGE
+            cp virtualxt_libretro.info $PACKAGE
+            butler login
+            butler push $PACKAGE phix/virtualxt:odin-macos-arm64-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
+          fi
+         
+  android-arm64-build:
+    name: Build (Android ARM64)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: Setup
+        run: |
+          rm -rf odin; mkdir odin
+          curl -L -o ndk.zip https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux.zip && unzip ndk.zip
+          curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip -d butler
+          curl -L -o odin.zip https://github.com/odin-lang/Odin/releases/download/${ODIN_VERSION}/odin-linux-amd64-${ODIN_VERSION}.zip && unzip odin.zip
+          echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
+          echo "${GITHUB_WORKSPACE}/odin-linux-amd64-${ODIN_VERSION}" >> $GITHUB_PATH
+
+      - name: Test
+        run: make tests
+
+      - name: Build
+        run: |
+          make clean
+          CC="${GITHUB_WORKSPACE}/android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang" make android
+          
+      - name: Deploy
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          if [[ $GITHUB_REF_NAME =~ ^(main)$ ]]; then
+            PACKAGE="${GITHUB_WORKSPACE}/package"
+            rm -rf $PACKAGE
+            mkdir $PACKAGE
+            cp virtualxt_libretro.so $PACKAGE
+            cp virtualxt_libretro.info $PACKAGE
+            butler login
+            butler push "${GITHUB_WORKSPACE}/package" phix/virtualxt:odin-android-arm64-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
+          fi

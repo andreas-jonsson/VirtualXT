@@ -1,4 +1,4 @@
-; Copyright (c) 2019-2024 Andreas T Jonsson <mail@andreasjonsson.se>
+; Copyright (c) 2019-2025 Andreas T Jonsson <mail@andreasjonsson.se>
 ;
 ; This software is provided 'as-is', without any express or implied
 ; warranty. In no event will the authors be held liable for any damages

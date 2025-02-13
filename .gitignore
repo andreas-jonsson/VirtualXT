@@ -1,55 +1,64 @@
-__pycache__
-
-*.o
+# Prerequisites
 *.d
-/front/rpi/*.img
-/front/rpi/*.lst
-/front/rpi/*.map
-/front/rpi/*.elf
 
-/obj
-/bin
-/.vscode
-/*.geany
-/kcov-out
-/build
-/docs
-/gh-pages
-/test
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
 
-/.cache
-/compile_commands
-/compile_commands.json
+# Linker output
+*.ilk
+*.map
+*.exp
 
-/Makefile
-/*.make
+# Precompiled Headers
+*.gch
+*.pch
 
-/*.vcxproj*
-/*.sln
-/.vs
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+*.ll
 
-/modules/modules.h
-/modules/dummy.c
-/modules/*.vxt
-/modules/*.lib
-/modules/*.pdb
-/modules/*.exp
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+*.wasm
 
-/tools/aspi/*.sys
-/tools/aspi/*.lst
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
 
-/tools/tests/8088v1/*.json.gz
-/tools/tests/8088v1/*.bin
-/tools/tests/8088v1/8088.json
-/lib/vxt/8088_tests.c
-/tools/tests/V20v1/*.json.gz
-/tools/tests/V20v1/*.bin
-/tools/tests/V20v1/metadata.json
-/lib/vxt/v20_tests.c
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
 
-/*.log
-/*.trace*
-/tools/vxtdrv/vxtdrv.com
-/tools/shutdown/shutdown.com
-/boot/msdos*.img
-/boot/windows*.img
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+
+*.core
+*.dump
+
+/tools/circle/kernel/*.img
+/tools/circle/kernel/*.lst
+
+/src/tests/testdata/*.json*
+/src/tests/opcodes.odin
+/tests

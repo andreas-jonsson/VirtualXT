@@ -1,12 +1,10 @@
 # VirtualXT
 
-[![Build](https://github.com/andreas-jonsson/virtualxt/actions/workflows/sdl2.yml/badge.svg)](https://github.com/andreas-jonsson/virtualxt/actions/workflows/sdl2.yml)
-[![Codecov](https://codecov.io/gh/andreas-jonsson/virtualxt/branch/develop/graph/badge.svg?token=HD9I58ZGG5)](https://codecov.io/gh/andreas-jonsson/virtualxt)
-[![Packages](https://repology.org/badge/tiny-repos/virtualxt.svg?header=packages)](https://repology.org/project/virtualxt/versions)
-[![Chat](https://badgen.net/badge/icon/discord?icon=discord&label)](https://discord.com/channels/1333142665566617710/1333166999844687942)
-[![Support](https://github.com/BoostIO/issuehunt-materials/raw/master/v1/issuehunt-shield-v1.svg)](https://issuehunt.io/r/andreas-jonsson/virtualxt)
+[![Build](https://github.com/virtualxt/virtualxt/actions/workflows/libretro.yml/badge.svg)](https://github.com/virtualxt/virtualxt/actions/workflows/sdl2.yml)
+[![Chat](https://img.shields.io/matrix/virtualxt:matrix.org)](https://matrix.to/#/#virtualxt:matrix.org)
+[![Support](https://github.com/BoostIO/issuehunt-materials/raw/master/v1/issuehunt-shield-v1.svg)](https://issuehunt.io/r/virtualxt/virtualxt)
 
-VirtualXT is a Turbo PC/XT emulator that runs on modern hardware, operating systems and bare-metal ARM SBCs.
+VirtualXT is a [libretro](https://www.libretro.com) Turbo PC/XT emulator that runs on modern hardware, operating systems and bare-metal ARM SBCs.
 It is designed to be simple and lightweight yet still capable enough to run a large library of old application and games.
 
 Browser version is avalible [here](https://realmode.games).
@@ -39,18 +37,17 @@ Browser version is avalible [here](https://realmode.games).
 
 ## Build
 
-The emulator is written in C11 and can be compiled with most modern C compilers. In order to generate a Makefile you need to install [Premake](https://premake.github.io/). You also need to have [SDL2](https://www.libsdl.org/) installed on your system or pass `--sdl-path=<path to lib>` to the premake script.
+The emulator is written in [Odin](https://odin-lang.org) and can be compiled using the included GNU Makefile.
 
 ```
-git clone https://github.com/andreas-jonsson/virtualxt.git
+git clone https://github.com/virtualxt/virtualxt.git
 cd virtualxt
-premake5 gmake2
-make sdl2-frontend
+make release
+# Or if you have RetroArch installed.
+make run
 ```
 
 You can download pre-built binaries from [itch.io](https://phix.itch.io/virtualxt/purchase).
-
-If you want to embed the emulator or create a custom frontend you can find libvxt API documentation [here](https://andreas-jonsson.github.io/virtualxt/docs).
 
 ## ISA Passthrough​
 

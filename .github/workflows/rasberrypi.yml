@@ -1,0 +1,105 @@
+name: RasberryPi
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  workflow_dispatch:
+
+env:
+  VXT_VERSION: 1.4.0
+  ODIN_VERSION: dev-2025-02
+  
+jobs:
+  rpi-build:
+    name: RasberryPi
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: Setup
+        run: |
+          rm -rf odin; mkdir odin
+          curl -L -o circle.zip https://github.com/virtualxt/circle/archive/refs/heads/develop.zip
+          curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default && unzip butler.zip -d butler
+          curl -L -o toolchain.tar.xz https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf.tar.xz && tar -xf toolchain.tar.xz
+          curl -L -o odin.zip https://github.com/odin-lang/Odin/releases/download/${ODIN_VERSION}/odin-linux-amd64-${ODIN_VERSION}.zip && unzip odin.zip
+          echo "${GITHUB_WORKSPACE}/butler" >> $GITHUB_PATH
+          echo "${GITHUB_WORKSPACE}/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf/bin" >> $GITHUB_PATH
+          echo "${GITHUB_WORKSPACE}/odin-linux-amd64-${ODIN_VERSION}" >> $GITHUB_PATH
+
+      - name: Test
+        run: |
+          make tests 
+
+      - name: Build (bootloader)
+        run: |
+          rm -rf "${GITHUB_WORKSPACE}/package"
+          mkdir -p "${GITHUB_WORKSPACE}/package"
+          export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-develop"
+          rm -rf "${CIRCLEHOME}"
+          cd "${GITHUB_WORKSPACE}"
+          unzip circle.zip
+          cd "${CIRCLEHOME}"
+          ./configure -r 3 --multicore -p aarch64-none-elf-
+          make -C "${CIRCLEHOME}/boot"
+          cp "${CIRCLEHOME}"/boot/*.dtb "${GITHUB_WORKSPACE}/package"
+          cp "${CIRCLEHOME}"/boot/*.dat "${GITHUB_WORKSPACE}/package"
+          cp "${CIRCLEHOME}"/boot/*.bin "${GITHUB_WORKSPACE}/package"
+          cp "${CIRCLEHOME}"/boot/*.elf "${GITHUB_WORKSPACE}/package"
+          cp "${CIRCLEHOME}/boot/config64.txt" "${GITHUB_WORKSPACE}/package/config.txt"
+          
+      - name: Build (RaspberryPi3)
+        run: |
+          export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-develop"
+          cd "${CIRCLEHOME}"
+          ./makeall
+          make -C "${CIRCLEHOME}/addon/fatfs"
+          make -C "${CIRCLEHOME}/addon/SDCard"
+          make -C "${GITHUB_WORKSPACE}" clean rasberrypi
+          cp "${GITHUB_WORKSPACE}/tools/circle/kernel/kernel8.img" "${GITHUB_WORKSPACE}/package"
+
+      - name: Build (RaspberryPi4)
+        run: |
+          export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-develop"
+          rm -rf "${CIRCLEHOME}"
+          cd "${GITHUB_WORKSPACE}"
+          unzip circle.zip
+          cd "${CIRCLEHOME}"
+          ./configure -r 4 --multicore -p aarch64-none-elf-
+          ./makeall
+          make -C "${CIRCLEHOME}/addon/fatfs"
+          make -C "${CIRCLEHOME}/addon/SDCard"
+          make -C "${GITHUB_WORKSPACE}" clean rasberrypi
+          cp "${GITHUB_WORKSPACE}/tools/circle/kernel/kernel8-rpi4.img" "${GITHUB_WORKSPACE}/package"
+
+      - name: Build (RaspberryPi5)
+        run: |
+          export CIRCLEHOME="${GITHUB_WORKSPACE}/circle-develop"
+          rm -rf "${CIRCLEHOME}"
+          cd "${GITHUB_WORKSPACE}"
+          unzip circle.zip
+          cd "${CIRCLEHOME}"
+          ./configure -r 5 --multicore -p aarch64-none-elf-
+          ./makeall
+          make -C "${CIRCLEHOME}/addon/fatfs"
+          make -C "${CIRCLEHOME}/addon/SDCard"
+          make -C "${GITHUB_WORKSPACE}" clean rasberrypi
+          cp "${GITHUB_WORKSPACE}/tools/circle/kernel/kernel_2712.img" "${GITHUB_WORKSPACE}/package"
+
+      - name: Deploy
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          if [[ $GITHUB_REF_NAME =~ ^(main)$ ]]; then
+            butler login
+            butler push package phix/virtualxt:odin-rasberrypi-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
+          fi

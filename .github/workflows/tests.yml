@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [ "develop", "edge", "release" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "develop" ]
+    branches: [ "main" ]
 
   workflow_dispatch:
 
@@ -12,10 +12,14 @@ concurrency:
   group: ${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
+env:
+  ODIN_VERSION: dev-2025-02
+
 jobs:
-  linux-build:
-    name: Tests (Linux AMD64)
-    runs-on: ubuntu-22.04
+  linux-tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
 
     steps:
       - uses: actions/checkout@v2
@@ -24,29 +28,12 @@ jobs:
 
       - name: Setup
         run: |
-          sudo apt-get update
-          sudo apt-get install kcov
-          curl -L -o premake5.tar.gz https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-linux.tar.gz && mkdir premake5 && tar -xf premake5.tar.gz -C premake5
-          echo "${GITHUB_WORKSPACE}/premake5" >> $GITHUB_PATH
+          rm -rf odin; mkdir odin
+          curl -L -o odin.zip https://github.com/odin-lang/Odin/releases/download/${ODIN_VERSION}/odin-linux-amd64-${ODIN_VERSION}.zip && unzip odin.zip
+          echo "${GITHUB_WORKSPACE}/odin-linux-amd64-${ODIN_VERSION}" >> $GITHUB_PATH
 
       - name: Generate
-        run: |
-          ./tools/tests/8088v1/generate.py
-          ./tools/tests/V20v1/generate.py
-
-      - name: Premake
-        run: premake5 --test gmake
-
+        run: make testdata
+        
       - name: Test
-        run: make clean test
-
-      - name: Report
-        run: |
-          kcov --include-path=lib/vxt --exclude-path=lib/vxt/include,lib/vxt/test \
-          --exclude-pattern=cga.c,disk.c,dma.c,dummy.c,mda.c,memory.c,mouse.c,pic.c,pit.c,ppi.c,uart.c \
-          kcov-out test/test .
-
-      - name: Upload
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        run: bash <(curl -s https://codecov.io/bash) -s kcov-out
+        run: make tests
