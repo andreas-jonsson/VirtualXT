@@ -2,9 +2,9 @@ name: Libretro
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "develop", "edge", "release" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "develop" ]
 
   workflow_dispatch:
 
@@ -44,14 +44,14 @@ jobs:
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
         run: |
-          if [[ $GITHUB_REF_NAME =~ ^(main)$ ]]; then
+          if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then
             PACKAGE="${GITHUB_WORKSPACE}/package"
             rm -rf $PACKAGE
             mkdir $PACKAGE
             cp virtualxt_libretro.so $PACKAGE
             cp virtualxt_libretro.info $PACKAGE
             butler login
-            butler push $PACKAGE phix/virtualxt:odin-linux-amd64-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
+            butler push $PACKAGE phix/virtualxt:linux-amd64-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
           fi
 
   windows-amd64-build:
@@ -85,14 +85,14 @@ jobs:
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
         run: |
-          if [[ $GITHUB_REF_NAME =~ ^(main)$ ]]; then
+          if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then
             PACKAGE="${GITHUB_WORKSPACE}/package"
             rm -rf $PACKAGE
             mkdir $PACKAGE
             cp virtualxt_libretro.dll $PACKAGE
             cp virtualxt_libretro.info $PACKAGE
             butler login
-            butler push $PACKAGE phix/virtualxt:odin-windows-amd64-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
+            butler push $PACKAGE phix/virtualxt:windows-amd64-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
           fi
 
   macos-amd64-build:
@@ -126,14 +126,14 @@ jobs:
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
         run: |
-          if [[ $GITHUB_REF_NAME =~ ^(main)$ ]]; then
+          if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then
             PACKAGE="${GITHUB_WORKSPACE}/package"
             rm -rf $PACKAGE
             mkdir $PACKAGE
             cp virtualxt_libretro.dylib $PACKAGE
             cp virtualxt_libretro.info $PACKAGE
             butler login
-            butler push $PACKAGE phix/virtualxt:odin-macos-amd64-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
+            butler push $PACKAGE phix/virtualxt:macos-amd64-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
           fi
 
   macos-arm64-build:
@@ -166,14 +166,14 @@ jobs:
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
         run: |
-          if [[ $GITHUB_REF_NAME =~ ^(main)$ ]]; then
+          if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then
             PACKAGE="${GITHUB_WORKSPACE}/package"
             rm -rf $PACKAGE
             mkdir $PACKAGE
             cp virtualxt_libretro.dylib $PACKAGE
             cp virtualxt_libretro.info $PACKAGE
             butler login
-            butler push $PACKAGE phix/virtualxt:odin-macos-arm64-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
+            butler push $PACKAGE phix/virtualxt:macos-arm64-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
           fi
          
   android-arm64-build:
@@ -209,12 +209,12 @@ jobs:
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
         run: |
-          if [[ $GITHUB_REF_NAME =~ ^(main)$ ]]; then
+          if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then
             PACKAGE="${GITHUB_WORKSPACE}/package"
             rm -rf $PACKAGE
             mkdir $PACKAGE
             cp virtualxt_libretro.so $PACKAGE
             cp virtualxt_libretro.info $PACKAGE
             butler login
-            butler push "${GITHUB_WORKSPACE}/package" phix/virtualxt:odin-android-arm64-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
+            butler push "${GITHUB_WORKSPACE}/package" phix/virtualxt:android-arm64-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
           fi

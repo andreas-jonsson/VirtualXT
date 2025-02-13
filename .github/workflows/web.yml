@@ -1,10 +1,9 @@
 name: Web
 
 on:
-  push:
-    branches: [ "main" ]
+    branches: [ "develop", "edge", "release" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "develop" ]
 
   workflow_dispatch:
 
@@ -41,11 +40,11 @@ jobs:
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
         run: |
-          if [[ $GITHUB_REF_NAME =~ ^(main)$ ]]; then
+          if [[ $GITHUB_REF_NAME =~ ^(edge)$ ]]; then
             PACKAGE="${GITHUB_WORKSPACE}/package"
             rm -rf $PACKAGE
             mkdir $PACKAGE
             cp virtualxt_libretro.so $PACKAGE
             butler login
-            butler push $PACKAGE phix/virtualxt:odin-web-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
+            butler push $PACKAGE phix/virtualxt:web-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
           fi

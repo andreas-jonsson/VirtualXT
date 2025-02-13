@@ -2,9 +2,9 @@ name: RasberryPi
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "develop", "edge", "release" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "develop" ]
 
   workflow_dispatch:
 
@@ -99,7 +99,7 @@ jobs:
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
         run: |
-          if [[ $GITHUB_REF_NAME =~ ^(main)$ ]]; then
+          if [[ $GITHUB_REF_NAME =~ ^(edge|release)$ ]]; then
             butler login
-            butler push package phix/virtualxt:odin-rasberrypi-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
+            butler push package phix/virtualxt:rasberrypi-arm64-${GITHUB_REF_NAME} --userversion ${VXT_VERSION}-${GITHUB_RUN_ID}
           fi
