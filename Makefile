@@ -13,9 +13,14 @@ else
 	endif
 endif
 
+TARGET_PARAM=
+ifneq ($(ODIN_TARGET),)
+	TARGET_PARAM=-target:$(ODIN_TARGET)
+endif
+
 CPU_TRACE_PARAM=
-ifneq ($(CPU_TRACE),)
-	CPU_TRACE_PARAM=-define:VXT_CPU_TRACE=$(CPU_TRACE)
+ifneq ($(VXT_CPU_TRACE),)
+	CPU_TRACE_PARAM=-define:VXT_CPU_TRACE=$(VXT_CPU_TRACE)
 endif
 
 COLLECTIONS= \
@@ -52,8 +57,11 @@ rasberrypi:
 	$(ODIN_BUILD) -out:tools/circle/kernel/core.o -build-mode:object -target:freestanding_arm64 -define:VXT_EXTERNAL_HEAP=true -o:speed
 	$(MAKE) -C tools/circle/kernel
 
+object:
+	$(ODIN_BUILD) -out:$(LIB_NAME).o -build-mode:object $(TARGET_PARAM) -reloc-mode:pic -o:speed
+
 wasm:
-	$(ODIN_BUILD) -out:$(LIB_NAME) -build-mode:shared -target:freestanding_wasm32 -o:speed
+	$(ODIN_BUILD) -out:$(LIB_NAME).wasm -build-mode:shared -target:freestanding_wasm32 -o:speed
 
 run: release
 	retroarch -v -L $(LIB_NAME).$(LIB_EXT)
