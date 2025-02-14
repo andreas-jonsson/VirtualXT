@@ -51,6 +51,7 @@ else ifeq ($(platform), linux-portable)
    TARGET := $(TARGET_NAME)_libretro.$(EXT)
    fpic := -fPIC -nostdlib
    SHARED := -shared
+   ODIN_TARGET = freestanding_amd64_sysv
 else ifneq (,$(findstring android,$(platform)))
    TARGET := $(TARGET_NAME)_libretro_android.so
    fpic := -fPIC
@@ -149,7 +150,7 @@ setup:
 $(OBJECTS): setup
 	echo $(platform)
 	echo $(system_platform)
-	ls -al $(PATH):$(PWD)/odin-linux-amd64-$(ODIN_VERSION)
+	ls -al $(PWD)/odin-linux-amd64-$(ODIN_VERSION)
 	export PATH=$(PATH):$(PWD)/odin-linux-amd64-$(ODIN_VERSION) && ODIN_TARGET=linux_amd64 $(MAKE) -C $(CORE_DIR) object
 	ls -al
 
