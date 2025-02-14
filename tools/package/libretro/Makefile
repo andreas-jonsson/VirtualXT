@@ -69,7 +69,7 @@ else ifneq (,$(findstring android,$(platform)))
       ODIN_TARGET = freestanding_arm64
    else ifeq ($(platform), android-x86)
       TARGET_TRIPLE = i686-linux-android
-      # Note: There are no freestanding i386 target atm. But this should work.
+      # Note: There are no freestanding i386 target atm. But I think this should work.
       ODIN_TARGET = linux_i386
    else ifeq ($(platform), android-x86_64)
       TARGET_TRIPLE = x86_64-linux-android
@@ -154,9 +154,12 @@ setup:
 	curl -L -o odin.zip https://github.com/odin-lang/Odin/releases/download/$(ODIN_VERSION)/odin-$(system_odin)-$(ODIN_VERSION).zip && unzip odin.zip
 
 $(OBJECTS): setup
-	@echo libretro-platform: $(platform)
+	@echo platform: $(platform)
+	@echo CROSS_COMPILE: $(CROSS_COMPILE)
+	@echo LIBRETRO_APPLE_PLATFORM: $(LIBRETRO_APPLE_PLATFORM)
 	PATH=$(PATH):$(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION) ODIN_TARGET=$(ODIN_TARGET) ODIN_SUBTARGET=$(ODIN_SUBTARGET) ODIN_VET= $(MAKE) -C $(CORE_DIR) object
 	ls -al
+	ls -al $(CORE_DIR)
 
 $(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING), 1)

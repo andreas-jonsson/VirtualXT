@@ -95,14 +95,14 @@ libretro-build-osx-arm64:
 
 ################################### CELLULAR #################################
 # Android ARMv7a
-android-armeabi-v7a:
-  only:
-    - develop
-    - edge
-    - release
-  extends:
-    - .libretro-android-make-armeabi-v7a
-    - .core-defs
+#android-armeabi-v7a:
+#  only:
+#    - develop
+#    - edge
+#    - release
+#  extends:
+#    - .libretro-android-make-armeabi-v7a
+#    - .core-defs
 
 # Android ARMv8a
 android-arm64-v8a:
