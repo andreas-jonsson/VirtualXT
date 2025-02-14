@@ -37,7 +37,9 @@ default_context: runtime.Context
 @(export)
 odin_startup_runtime :: proc "c" (heap: rawptr, size: c.int) {
 	context = runtime.default_context()
-	core_heap = slice.bytes_from_ptr(heap, int(size))
+	if size > 0 {
+		core_heap = slice.bytes_from_ptr(heap, int(size))
+	}
 	#force_no_inline runtime._startup_runtime()
 }
 

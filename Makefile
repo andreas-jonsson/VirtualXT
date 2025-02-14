@@ -49,10 +49,6 @@ debug: gdbstub
 release:
 	$(ODIN_BUILD) $(LIB_NAME_PARAM) -build-mode:$(BUILD_MODE) -o:speed
 
-android:
-	$(ODIN_BUILD) -out:$(LIB_NAME) -build-mode:object -target:freestanding_arm64 -reloc-mode:pic -o:speed
-	$(CC) -shared -o virtualxt_libretro.so virtualxt_libretro.o
-
 rasberrypi:
 	$(ODIN_BUILD) -out:tools/circle/kernel/core.o -build-mode:object -target:freestanding_arm64 -define:VXT_EXTERNAL_HEAP=true -o:speed
 	$(MAKE) -C tools/circle/kernel

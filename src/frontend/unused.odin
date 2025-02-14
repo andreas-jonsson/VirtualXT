@@ -25,10 +25,6 @@ import "core:c"
 import retro "vxt:frontend/libretro"
 
 @(export)
-retro_init :: proc "c" () {
-}
-
-@(export)
 retro_deinit :: proc "c" () {
 }
 

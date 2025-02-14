@@ -183,6 +183,13 @@ add_image_index :: proc "c" () -> c.bool {
 }
 
 @(export)
+retro_init :: proc "c" () {
+	when !#config(VXT_EXTERNAL_HEAP, false) {
+		odin_startup_runtime(nil, 0)
+	}
+}
+
+@(export)
 retro_set_environment :: proc "c" (cb: retro.environment_t) {
 	using retro, runtime.Logger_Level
 	context = default_context
