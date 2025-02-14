@@ -56,8 +56,8 @@ include:
 
   #################################### MISC ##################################
   # Emscripten
-  - project: 'libretro-infrastructure/ci-templates'
-    file: '/emscripten-static.yml'
+  #- project: 'libretro-infrastructure/ci-templates'
+  #  file: '/emscripten-static.yml'
 
 # Stages for building
 stages:
@@ -73,6 +73,7 @@ stages:
 # Windows 64-bit
 libretro-build-windows-x64:
   only:
+    - develop
     - edge
     - release
   extends:
@@ -110,6 +111,7 @@ libretro-build-linux-i686:
 # MacOS 64-bit
 libretro-build-osx-x64:
   only:
+    - develop
     - edge
     - release
   extends:
@@ -119,6 +121,7 @@ libretro-build-osx-x64:
 # MacOS ARM 64-bit
 libretro-build-osx-arm64:
   only:
+    - develop
     - edge
     - release
   extends:
@@ -129,6 +132,7 @@ libretro-build-osx-arm64:
 # Android ARMv7a
 android-armeabi-v7a:
   only:
+    - develop
     - edge
     - release
   extends:
@@ -138,6 +142,7 @@ android-armeabi-v7a:
 # Android ARMv8a
 android-arm64-v8a:
   only:
+    - develop
     - edge
     - release
   extends:
@@ -147,6 +152,7 @@ android-arm64-v8a:
 # Android 64-bit x86
 android-x86_64:
   only:
+    - develop
     - edge
     - release
   extends:
@@ -156,6 +162,7 @@ android-x86_64:
 # Android 32-bit x86
 android-x86:
   only:
+    - develop
     - edge
     - release
   extends:
@@ -165,6 +172,7 @@ android-x86:
 # iOS
 libretro-build-ios-arm64:
   only:
+    - develop
     - edge
     - release
   extends:
@@ -174,6 +182,7 @@ libretro-build-ios-arm64:
 # iOS (armv7) [iOS 9 and up]
 libretro-build-ios9:
   only:
+    - develop
     - edge
     - release
   extends:
@@ -183,6 +192,7 @@ libretro-build-ios9:
 # tvOS
 libretro-build-tvos-arm64:
   only:
+    - develop
     - edge
     - release
   extends:
@@ -191,10 +201,10 @@ libretro-build-tvos-arm64:
 
 #################################### MISC ##################################
 # Emscripten
-libretro-build-emscripten:
-  only:
-    - edge
-    - release
-  extends:
-    - .libretro-emscripten-static-retroarch-master
-    - .core-defs
+#libretro-build-emscripten:
+#  only:
+#    - edge
+#    - release
+#  extends:
+#    - .libretro-emscripten-static-retroarch-master
+#    - .core-defs

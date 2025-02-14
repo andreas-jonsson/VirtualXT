@@ -44,12 +44,16 @@ ifneq (,$(findstring unix,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.$(EXT)
    fpic := -fPIC
    SHARED := -shared -Wl,--no-undefined
+
+   # TODO: Check if this is 32 or 64bit
    ODIN_TARGET = linux_amd64
 else ifeq ($(platform), linux-portable)
    EXT ?= so
    TARGET := $(TARGET_NAME)_libretro.$(EXT)
    fpic := -fPIC -nostdlib
    SHARED := -shared
+
+   # TODO: Check if this is 32 or 64bit
    ODIN_TARGET = freestanding_amd64_sysv
 else ifneq (,$(findstring android,$(platform)))
    TARGET := $(TARGET_NAME)_libretro_android.so
@@ -65,6 +69,7 @@ else ifneq (,$(findstring android,$(platform)))
       ODIN_TARGET = freestanding_arm64
    else ifeq ($(platform), android-x86)
       TARGET_TRIPLE = i686-linux-android
+      # Note: There are no freestanding i386 target atm. But this should work.
       ODIN_TARGET = linux_i386
    else ifeq ($(platform), android-x86_64)
       TARGET_TRIPLE = x86_64-linux-android
@@ -78,10 +83,18 @@ else ifneq (,$(findstring osx,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.dylib
    fpic := -fPIC
    SHARED := -dynamiclib
+   TARGET_PLATFORM = $(shell uname -p)
 
    ifeq ($(CROSS_COMPILE),1)
 		TARGET_RULE   = -target $(LIBRETRO_APPLE_PLATFORM) -isysroot $(LIBRETRO_APPLE_ISYSROOT)
 		LDFLAGS      += $(TARGET_RULE)
+		TARGET_PLATFORM = $(LIBRETRO_APPLE_PLATFORM)
+   endif
+
+   ifeq (,$(findstring arm,$(TARGET_PLATFORM)))
+    	ODIN_TARGET = darwin_arm64
+   else
+   		ODIN_TARGET = darwin_amd64
    endif
 else ifneq (,$(findstring ios,$(platform)))
    EXT ?= dylib
@@ -121,7 +134,10 @@ else ifneq (,$(findstring tvos,$(platform)))
    CC = cc -arch arm64 $(MIN_VERSION) -isysroot $(TVOSSDK)
    ODIN_TARGET = freestanding_arm64
 else ifeq ($(platform), emscripten)
-   TARGET := $(TARGET_NAME)_libretro_emscripten.bc
+
+   # Emscripten is not supported atm.
+   
+   #TARGET := $(TARGET_NAME)_libretro_emscripten.bc
    fpic := -fPIC
    SHARED := -shared -Wl,--no-undefined
    STATIC_LINKING=1
@@ -129,6 +145,8 @@ else ifeq ($(platform), emscripten)
 else
    TARGET := $(TARGET_NAME)_libretro.dll
    SHARED := -shared -static-libgcc -s -Wl,--no-undefined
+
+   # TODO: Check if this is 32 or 64bit
    ODIN_TARGET = windows_amd64
 endif
 
@@ -144,9 +162,7 @@ $(OBJECTS): setup
 	uname -a
 	echo $(platform)
 	echo $(system_odin)
-	ls -al $(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION)
-	export PATH=$(PATH):$(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION) && ODIN_TARGET=linux_amd64 $(MAKE) -C $(CORE_DIR) object
-	ls -al
+	export PATH=$(PATH):$(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION) && $(MAKE) -C $(CORE_DIR) object
 
 $(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING), 1)
