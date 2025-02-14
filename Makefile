@@ -47,6 +47,7 @@ debug: gdbstub
 	$(ODIN_BUILD) $(LIB_NAME_PARAM) -build-mode:$(BUILD_MODE) -define:VXT_GDBSTUB=true -debug
 
 release:
+	echo $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 	$(ODIN_BUILD) $(LIB_NAME_PARAM) -build-mode:$(BUILD_MODE) -o:speed
 
 rasberrypi:

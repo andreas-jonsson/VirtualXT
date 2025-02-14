@@ -1,6 +1,8 @@
 STATIC_LINKING := 0
 AR             := ar
 ODIN_VERSION   := dev-2025-02
+TARGET_NAME    := virtualxt
+CORE_DIR       := ../../../
 
 ifneq ($(V),1)
    Q := @
@@ -21,22 +23,24 @@ endif
 
 # system platform
 system_platform = unix
+system_arch = x86_64
+system_odin = linux-amd64
+
 ifeq ($(shell uname -a),)
 	EXE_EXT = .exe
 	system_platform = win
+	system_odin = windows-amd64
 else ifneq ($(findstring Darwin,$(shell uname -a)),)
 	system_platform = osx
-	arch = intel
-   ifeq ($(shell uname -p),arm)
-      arch = arm
-   endif
+	system_odin = macos-amd64
+	ifeq ($(shell uname -p),arm)
+    	system_arch = arm64
+    	system_odin = macos-arm64
+	endif
 else ifneq ($(findstring MINGW,$(shell uname -a)),)
 	system_platform = win
+	system_odin = windows-amd64
 endif
-
-CORE_DIR += ../../../
-TARGET_NAME := virtualxt
-ODIN_TARGET =
 
 ifeq ($(STATIC_LINKING), 1)
    EXT := a
@@ -47,7 +51,9 @@ ifneq (,$(findstring unix,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.$(EXT)
    fpic := -fPIC
    SHARED := -shared -Wl,--no-undefined
+   ODIN_TARGET = linux_amd64
 else ifeq ($(platform), linux-portable)
+   EXT ?= so
    TARGET := $(TARGET_NAME)_libretro.$(EXT)
    fpic := -fPIC -nostdlib
    SHARED := -shared
@@ -66,8 +72,10 @@ else ifneq (,$(findstring android,$(platform)))
       ODIN_TARGET = freestanding_arm64
    else ifeq ($(platform), android-x86)
       TARGET_TRIPLE = i686-linux-android
+      ODIN_TARGET = linux_i386
    else ifeq ($(platform), android-x86_64)
       TARGET_TRIPLE = x86_64-linux-android
+      ODIN_TARGET = freestanding_amd64_sysv
    endif
 
    CC = $(ANDROID_NDK_LLVM)/bin/$(TARGET_TRIPLE)21-clang
@@ -80,7 +88,6 @@ else ifneq (,$(findstring osx,$(platform)))
 
    ifeq ($(CROSS_COMPILE),1)
 		TARGET_RULE   = -target $(LIBRETRO_APPLE_PLATFORM) -isysroot $(LIBRETRO_APPLE_ISYSROOT)
-		CFLAGS       += $(TARGET_RULE)
 		LDFLAGS      += $(TARGET_RULE)
    endif
 else ifneq (,$(findstring ios,$(platform)))
@@ -88,7 +95,6 @@ else ifneq (,$(findstring ios,$(platform)))
    TARGET := $(TARGET_NAME)_libretro_ios.$(EXT)
    fpic := -fPIC
    SHARED := -dynamiclib
-   DEFINES := -DIOS
    MIN_VERSION := -miphoneos-version-min=5.0
 
    ifeq ($(platform),$(filter $(platform),ios9 ios-arm64))
@@ -108,11 +114,10 @@ else ifneq (,$(findstring ios,$(platform)))
       ODIN_TARGET = freestanding_arm32
    endif
 else ifneq (,$(findstring tvos,$(platform)))
-	EXT ?= dylib
+   EXT ?= dylib
    TARGET := $(TARGET_NAME)_libretro_tvos.$(EXT)
    fpic := -fPIC
    SHARED := -dynamiclib
-   DEFINES := -DIOS -DTVOS
    MIN_VERSION := -mappletvos-version-min=9.0
 
    ifeq ($(TVOSSDK),)
@@ -134,24 +139,21 @@ else
    ODIN_TARGET = windows_amd64
 endif
 
-ifeq ($(DEBUG), 1)
-   CFLAGS += -O0 -g
-else
-   CFLAGS += -O3 -DNDEBUG
-endif
-
+MKPATH = $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 OBJECTS = $(TARGET_NAME)_libretro.o
 
 all: $(TARGET)
 
 setup:
-	curl -L -o odin.zip https://github.com/odin-lang/Odin/releases/download/$(ODIN_VERSION)/odin-linux-amd64-$(ODIN_VERSION).zip && unzip odin.zip
+	curl -L -o odin.zip https://github.com/odin-lang/Odin/releases/download/$(ODIN_VERSION)/odin-$(system_odin)-$(ODIN_VERSION).zip && unzip odin.zip
 
 $(OBJECTS): setup
+	uname -a
 	echo $(platform)
 	echo $(system_platform)
-	ls -al $(PWD)/odin-linux-amd64-$(ODIN_VERSION)
-	export PATH=$(PATH):$(PWD)/odin-linux-amd64-$(ODIN_VERSION) && ODIN_TARGET=linux_amd64 $(MAKE) -C $(CORE_DIR) object
+	echo $(system_odin)
+	ls -al $(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION)
+	export PATH=$(PATH):$(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION) && ODIN_TARGET=linux_amd64 $(MAKE) -C $(CORE_DIR) object
 	ls -al
 
 $(TARGET): $(OBJECTS)
