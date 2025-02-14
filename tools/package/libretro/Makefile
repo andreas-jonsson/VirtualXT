@@ -163,7 +163,7 @@ $(OBJECTS): setup
 	echo $(platform)
 	echo $(system_odin)
 	echo $(ODIN_TARGET)
-	PATH=$(PATH):$(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION) && ODIN_TARGET=$(ODIN_TARGET) && $(MAKE) -C $(CORE_DIR) object
+	PATH=$(PATH):$(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION) ODIN_TARGET=$(ODIN_TARGET) $(MAKE) -C $(CORE_DIR) object
 
 $(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING), 1)
