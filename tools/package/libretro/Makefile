@@ -22,23 +22,16 @@ ifeq ($(platform),)
 endif
 
 # system platform
-system_platform = unix
-system_arch = x86_64
 system_odin = linux-amd64
-
 ifeq ($(shell uname -a),)
 	EXE_EXT = .exe
-	system_platform = win
 	system_odin = windows-amd64
 else ifneq ($(findstring Darwin,$(shell uname -a)),)
-	system_platform = osx
 	system_odin = macos-amd64
 	ifeq ($(shell uname -p),arm)
-    	system_arch = arm64
     	system_odin = macos-arm64
 	endif
 else ifneq ($(findstring MINGW,$(shell uname -a)),)
-	system_platform = win
 	system_odin = windows-amd64
 endif
 
@@ -150,7 +143,6 @@ setup:
 $(OBJECTS): setup
 	uname -a
 	echo $(platform)
-	echo $(system_platform)
 	echo $(system_odin)
 	ls -al $(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION)
 	export PATH=$(PATH):$(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION) && ODIN_TARGET=linux_amd64 $(MAKE) -C $(CORE_DIR) object
@@ -165,7 +157,8 @@ else
 endif
 
 clean:
-	rm -f $(OBJECTS) $(TARGET)
+	rm -f $(OBJECTS) $(TARGET) odin.zip
+	rm -rf odin-$(system_odin)-$(ODIN_VERSION)
 	-$(MAKE) -C $(CORE_DIR) clean
 
 .PHONY: clean
