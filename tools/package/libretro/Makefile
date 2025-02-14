@@ -45,7 +45,7 @@ ifneq (,$(findstring unix,$(platform)))
    fpic := -fPIC
    SHARED := -shared -Wl,--no-undefined
 
-   # NOTE: Is this always linux amd64?
+   # NOTE: We only support linux amd64 atm.
    ODIN_TARGET = linux_amd64
 else ifeq ($(platform), linux-portable)
    EXT ?= so
@@ -53,7 +53,7 @@ else ifeq ($(platform), linux-portable)
    fpic := -fPIC -nostdlib
    SHARED := -shared
 
-   # TODO: Check if this is 32 or 64bit
+   # NOTE: We only support linux amd64 atm.
    ODIN_TARGET = freestanding_amd64_sysv
 else ifneq (,$(findstring android,$(platform)))
    TARGET := $(TARGET_NAME)_libretro_android.so
@@ -134,8 +134,6 @@ else ifneq (,$(findstring tvos,$(platform)))
    SHARED += -arch arm64 $(MIN_VERSION) -isysroot $(TVOSSDK)
    CC = cc -arch arm64 $(MIN_VERSION) -isysroot $(TVOSSDK)
    ODIN_TARGET = freestanding_arm64
-else ifeq ($(platform), emscripten)
-   # Emscripten is not supported atm.
 else
    TARGET := $(TARGET_NAME)_libretro.dll
    SHARED := -shared -static-libgcc -s -Wl,--no-undefined
@@ -156,9 +154,9 @@ setup:
 	curl -L -o odin.zip https://github.com/odin-lang/Odin/releases/download/$(ODIN_VERSION)/odin-$(system_odin)-$(ODIN_VERSION).zip && unzip odin.zip
 
 $(OBJECTS): setup
-	@echo platform: $(platform)
-	@echo target: $(ODIN_TARGET)
+	@echo libretro-platform: $(platform)
 	PATH=$(PATH):$(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION) ODIN_TARGET=$(ODIN_TARGET) ODIN_SUBTARGET=$(ODIN_SUBTARGET) ODIN_VET= $(MAKE) -C $(CORE_DIR) object
+	ls -al
 
 $(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING), 1)
