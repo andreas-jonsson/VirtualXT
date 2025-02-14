@@ -24,7 +24,6 @@ endif
 # system platform
 system_odin = linux-amd64
 ifeq ($(shell uname -a),)
-	EXE_EXT = .exe
 	system_odin = windows-amd64
 else ifneq ($(findstring Darwin,$(shell uname -a)),)
 	system_odin = macos-amd64
@@ -35,6 +34,7 @@ else ifneq ($(findstring MINGW,$(shell uname -a)),)
 	system_odin = windows-amd64
 endif
 
+OBJ_EXT := o
 ifeq ($(STATIC_LINKING), 1)
    EXT := a
 endif
@@ -91,7 +91,7 @@ else ifneq (,$(findstring osx,$(platform)))
 		TARGET_PLATFORM = $(LIBRETRO_APPLE_PLATFORM)
    endif
 
-   ifeq (,$(findstring arm,$(TARGET_PLATFORM)))
+   ifneq (,$(findstring arm,$(TARGET_PLATFORM)))
 		ODIN_TARGET = darwin_arm64
    else
 		ODIN_TARGET = darwin_amd64
@@ -137,6 +137,7 @@ else ifneq (,$(findstring tvos,$(platform)))
 else
    TARGET := $(TARGET_NAME)_libretro.dll
    SHARED := -shared -static-libgcc -s -Wl,--no-undefined
+   OBJ_EXT = obj
 
    ifeq ($(platform), win64)
     	ODIN_TARGET = windows_amd64
@@ -146,7 +147,7 @@ else
 endif
 
 MKPATH = $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
-OBJECTS = $(TARGET_NAME)_libretro.o
+OBJECTS = $(TARGET_NAME)_libretro.$(OBJ_EXT)
 
 all: $(TARGET)
 
@@ -154,12 +155,7 @@ setup:
 	curl -L -o odin.zip https://github.com/odin-lang/Odin/releases/download/$(ODIN_VERSION)/odin-$(system_odin)-$(ODIN_VERSION).zip && unzip odin.zip
 
 $(OBJECTS): setup
-	@echo platform: $(platform)
-	@echo CROSS_COMPILE: $(CROSS_COMPILE)
-	@echo LIBRETRO_APPLE_PLATFORM: $(LIBRETRO_APPLE_PLATFORM)
 	PATH=$(PATH):$(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION) ODIN_TARGET=$(ODIN_TARGET) ODIN_SUBTARGET=$(ODIN_SUBTARGET) ODIN_VET= $(MAKE) -C $(CORE_DIR) object
-	ls -al
-	ls -al $(CORE_DIR)
 
 $(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING), 1)
