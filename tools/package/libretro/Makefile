@@ -37,6 +37,8 @@ endif
 OBJ_EXT := o
 ifeq ($(STATIC_LINKING), 1)
    EXT := a
+else
+   ODIN_FLAGS = -reloc-mode:pic
 endif
 
 ifneq (,$(findstring unix,$(platform)))
@@ -94,7 +96,9 @@ else ifneq (,$(findstring osx,$(platform)))
    ifneq (,$(findstring arm,$(TARGET_PLATFORM)))
 		ODIN_TARGET = darwin_arm64
    else
-		ODIN_TARGET = darwin_amd64
+		# TODO: Fix this! Issue with OS version?
+		#ODIN_TARGET = darwin_amd64
+		ODIN_TARGET = freestanding_amd64_sysv
    endif
 else ifneq (,$(findstring ios,$(platform)))
    EXT ?= dylib
@@ -110,7 +114,7 @@ else ifneq (,$(findstring ios,$(platform)))
       IOSSDK := $(shell xcodebuild -version -sdk iphoneos Path)
    endif
 
-   ODIN_SUBTARGET = ios
+   ODIN_FLAGS += -subtarget:ios -minimum-os-version:$(MIN_VERSION)
    ifeq ($(platform),ios-arm64)
       SHARED += -arch arm64 $(MIN_VERSION) -isysroot $(IOSSDK)
       CC = cc -arch arm64 $(MIN_VERSION) -isysroot $(IOSSDK)
@@ -155,7 +159,8 @@ setup:
 	curl -L -o odin.zip https://github.com/odin-lang/Odin/releases/download/$(ODIN_VERSION)/odin-$(system_odin)-$(ODIN_VERSION).zip && unzip odin.zip
 
 $(OBJECTS): setup
-	PATH=$(PATH):$(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION) ODIN_TARGET=$(ODIN_TARGET) ODIN_SUBTARGET=$(ODIN_SUBTARGET) ODIN_VET= $(MAKE) -C $(CORE_DIR) object
+	@echo DARWIN_MIN_VERSION: $(MIN_VERSION)
+	PATH=$(PATH):$(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION) ODIN_TARGET=$(ODIN_TARGET) ODIN_FLAGS=$(ODIN_FLAGS) ODIN_VET= $(MAKE) -C $(CORE_DIR) object
 
 $(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING), 1)

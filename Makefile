@@ -18,11 +18,6 @@ ifneq ($(ODIN_TARGET),)
 	TARGET_PARAM=-target:$(ODIN_TARGET)
 endif
 
-SUBTARGET_PARAM=
-ifneq ($(ODIN_SUBTARGET),)
-	SUBTARGET_PARAM=-subtarget:$(ODIN_SUBTARGET)
-endif
-
 CPU_TRACE_PARAM=
 ifneq ($(VXT_CPU_TRACE),)
 	CPU_TRACE_PARAM=-define:VXT_CPU_TRACE=$(VXT_CPU_TRACE)
@@ -59,7 +54,7 @@ rasberrypi:
 	$(MAKE) -C tools/circle/kernel
 
 object:
-	$(ODIN_BUILD) -out:$(LIB_NAME).o -build-mode:object $(TARGET_PARAM) $(SUBTARGET_PARAM) -reloc-mode:pic -o:speed
+	$(ODIN_BUILD) -out:$(LIB_NAME).o -build-mode:object $(TARGET_PARAM) -o:speed $(ODIN_FLAGS)
 
 wasm:
 	$(ODIN_BUILD) -out:$(LIB_NAME).wasm -build-mode:shared -target:freestanding_wasm32 -o:speed
