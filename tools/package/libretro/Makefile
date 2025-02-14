@@ -92,9 +92,9 @@ else ifneq (,$(findstring osx,$(platform)))
    endif
 
    ifeq (,$(findstring arm,$(TARGET_PLATFORM)))
-		ODIN_TARGET = freestanding_arm64
+		ODIN_TARGET = darwin_arm64
    else
-		ODIN_TARGET = freestanding_amd64_sysv
+		ODIN_TARGET = darwin_amd64
    endif
 else ifneq (,$(findstring ios,$(platform)))
    EXT ?= dylib
@@ -110,14 +110,15 @@ else ifneq (,$(findstring ios,$(platform)))
       IOSSDK := $(shell xcodebuild -version -sdk iphoneos Path)
    endif
 
+   ODIN_SUBTARGET = ios
    ifeq ($(platform),ios-arm64)
       SHARED += -arch arm64 $(MIN_VERSION) -isysroot $(IOSSDK)
       CC = cc -arch arm64 $(MIN_VERSION) -isysroot $(IOSSDK)
-      ODIN_TARGET = freestanding_arm64
+      ODIN_TARGET = darwin_arm64
    else
       SHARED += -arch armv7 $(MIN_VERSION) -isysroot $(IOSSDK)
       CC = cc -arch armv7 $(MIN_VERSION) -isysroot $(IOSSDK)
-      ODIN_TARGET = freestanding_arm32
+      ODIN_TARGET = darwin_arm32
    endif
 else ifneq (,$(findstring tvos,$(platform)))
    EXT ?= dylib
@@ -157,7 +158,7 @@ setup:
 $(OBJECTS): setup
 	@echo platform: $(platform)
 	@echo target: $(ODIN_TARGET)
-	PATH=$(PATH):$(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION) ODIN_TARGET=$(ODIN_TARGET) ODIN_VET= $(MAKE) -C $(CORE_DIR) object
+	PATH=$(PATH):$(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION) ODIN_TARGET=$(ODIN_TARGET) ODIN_SUBTARGET=$(ODIN_SUBTARGET) ODIN_VET= $(MAKE) -C $(CORE_DIR) object
 
 $(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING), 1)
