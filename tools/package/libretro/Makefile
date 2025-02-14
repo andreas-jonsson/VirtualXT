@@ -162,7 +162,8 @@ $(OBJECTS): setup
 	uname -a
 	echo $(platform)
 	echo $(system_odin)
-	export PATH=$(PATH):$(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION) && $(MAKE) -C $(CORE_DIR) object
+	echo $(ODIN_TARGET)
+	PATH=$(PATH):$(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION) && ODIN_TARGET=$(ODIN_TARGET) && $(MAKE) -C $(CORE_DIR) object
 
 $(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING), 1)
