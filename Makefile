@@ -35,7 +35,7 @@ TEST_DATA= \
 	src/tests/testdata/*.json \
 	src/tests/testdata/*.json.gz
 
-ODIN_VET=-vet-semicolon -vet-shadowing -vet-style -vet-tabs -vet-unused
+ODIN_VET?=-vet-semicolon -vet-shadowing -vet-style -vet-tabs -vet-unused
 ODIN_BUILD=odin build src/frontend $(ODIN_VET) $(CPU_TRACE_PARAM) $(COLLECTIONS)
 
 all: release

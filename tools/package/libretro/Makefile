@@ -45,7 +45,7 @@ ifneq (,$(findstring unix,$(platform)))
    fpic := -fPIC
    SHARED := -shared -Wl,--no-undefined
 
-   # TODO: Check if this is 32 or 64bit
+   # NOTE: Is this always linux amd64?
    ODIN_TARGET = linux_amd64
 else ifeq ($(platform), linux-portable)
    EXT ?= so
@@ -92,9 +92,9 @@ else ifneq (,$(findstring osx,$(platform)))
    endif
 
    ifeq (,$(findstring arm,$(TARGET_PLATFORM)))
-    	ODIN_TARGET = darwin_arm64
+		ODIN_TARGET = freestanding_arm64
    else
-   		ODIN_TARGET = darwin_amd64
+		ODIN_TARGET = freestanding_amd64_sysv
    endif
 else ifneq (,$(findstring ios,$(platform)))
    EXT ?= dylib
@@ -134,20 +134,16 @@ else ifneq (,$(findstring tvos,$(platform)))
    CC = cc -arch arm64 $(MIN_VERSION) -isysroot $(TVOSSDK)
    ODIN_TARGET = freestanding_arm64
 else ifeq ($(platform), emscripten)
-
    # Emscripten is not supported atm.
-   
-   #TARGET := $(TARGET_NAME)_libretro_emscripten.bc
-   fpic := -fPIC
-   SHARED := -shared -Wl,--no-undefined
-   STATIC_LINKING=1
-   AR = emar
 else
    TARGET := $(TARGET_NAME)_libretro.dll
    SHARED := -shared -static-libgcc -s -Wl,--no-undefined
 
-   # TODO: Check if this is 32 or 64bit
-   ODIN_TARGET = windows_amd64
+   ifeq ($(platform), win64)
+    	ODIN_TARGET = windows_amd64
+   else
+		ODIN_TARGET = windows_i386
+   endif
 endif
 
 MKPATH = $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
@@ -159,11 +155,9 @@ setup:
 	curl -L -o odin.zip https://github.com/odin-lang/Odin/releases/download/$(ODIN_VERSION)/odin-$(system_odin)-$(ODIN_VERSION).zip && unzip odin.zip
 
 $(OBJECTS): setup
-	uname -a
-	echo $(platform)
-	echo $(system_odin)
-	echo $(ODIN_TARGET)
-	PATH=$(PATH):$(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION) ODIN_TARGET=$(ODIN_TARGET) $(MAKE) -C $(CORE_DIR) object
+	@echo platform: $(platform)
+	@echo target: $(ODIN_TARGET)
+	PATH=$(PATH):$(MKPATH)/odin-$(system_odin)-$(ODIN_VERSION) ODIN_TARGET=$(ODIN_TARGET) ODIN_VET= $(MAKE) -C $(CORE_DIR) object
 
 $(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING), 1)

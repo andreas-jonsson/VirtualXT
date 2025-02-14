@@ -43,16 +43,16 @@ include:
     file: '/android-make.yml'
 
   # iOS
-  - project: 'libretro-infrastructure/ci-templates'
-    file: '/ios-arm64.yml'
+  #- project: 'libretro-infrastructure/ci-templates'
+  #  file: '/ios-arm64.yml'
 
   # iOS (armv7)
-  - project: 'libretro-infrastructure/ci-templates'
-    file: '/ios9.yml'
+  #- project: 'libretro-infrastructure/ci-templates'
+  #  file: '/ios9.yml'
 
   # tvOS
-  - project: 'libretro-infrastructure/ci-templates'
-    file: '/tvos-arm64.yml'
+  #- project: 'libretro-infrastructure/ci-templates'
+  #  file: '/tvos-arm64.yml'
 
   #################################### MISC ##################################
   # Emscripten
@@ -83,6 +83,7 @@ libretro-build-windows-x64:
 # Windows 32-bit
 libretro-build-windows-i686:
   only:
+    - develop
     - edge
     - release
   extends:
@@ -100,8 +101,9 @@ libretro-build-linux-x64:
     - .core-defs
 
 # Linux 32-bit
-libretro-build-linux-i686:
+#libretro-build-linux-i686:
   only:
+    - develop
     - edge
     - release
   extends:
@@ -130,14 +132,14 @@ libretro-build-osx-arm64:
 
 ################################### CELLULAR #################################
 # Android ARMv7a
-android-armeabi-v7a:
-  only:
-    - develop
-    - edge
-    - release
-  extends:
-    - .libretro-android-make-armeabi-v7a
-    - .core-defs
+#android-armeabi-v7a:
+#  only:
+#    - develop
+#    - edge
+#    - release
+#  extends:
+#    - .libretro-android-make-armeabi-v7a
+#    - .core-defs
 
 # Android ARMv8a
 android-arm64-v8a:
@@ -150,54 +152,54 @@ android-arm64-v8a:
     - .core-defs
 
 # Android 64-bit x86
-android-x86_64:
-  only:
-    - develop
-    - edge
-    - release
-  extends:
-    - .libretro-android-make-x86_64
-    - .core-defs
+#android-x86_64:
+#  only:
+#    - develop
+#    - edge
+#    - release
+#  extends:
+#    - .libretro-android-make-x86_64
+#    - .core-defs
     
 # Android 32-bit x86
-android-x86:
-  only:
-    - develop
-    - edge
-    - release
-  extends:
-    - .libretro-android-make-x86
-    - .core-defs
+#android-x86:
+#  only:
+#    - develop
+#    - edge
+#    - release
+#  extends:
+#    - .libretro-android-make-x86
+#    - .core-defs
 
 # iOS
-libretro-build-ios-arm64:
-  only:
-    - develop
-    - edge
-    - release
-  extends:
-    - .libretro-ios-arm64-make-default
-    - .core-defs
+#libretro-build-ios-arm64:
+#  only:
+#    - develop
+#    - edge
+#    - release
+#  extends:
+#    - .libretro-ios-arm64-make-default
+#    - .core-defs
 
 # iOS (armv7) [iOS 9 and up]
-libretro-build-ios9:
-  only:
-    - develop
-    - edge
-    - release
-  extends:
-    - .libretro-ios9-make-default
-    - .core-defs
+#libretro-build-ios9:
+#  only:
+#    - develop
+#    - edge
+#    - release
+#  extends:
+#    - .libretro-ios9-make-default
+#    - .core-defs
 
 # tvOS
-libretro-build-tvos-arm64:
-  only:
-    - develop
-    - edge
-    - release
-  extends:
-    - .libretro-tvos-arm64-make-default
-    - .core-defs
+#libretro-build-tvos-arm64:
+#  only:
+#    - develop
+#    - edge
+#    - release
+#  extends:
+#    - .libretro-tvos-arm64-make-default
+#    - .core-defs
 
 #################################### MISC ##################################
 # Emscripten
