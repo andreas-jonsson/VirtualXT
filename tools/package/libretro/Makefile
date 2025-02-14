@@ -147,8 +147,8 @@ setup:
 	curl -L -o odin.zip https://github.com/odin-lang/Odin/releases/download/$(ODIN_VERSION)/odin-linux-amd64-$(ODIN_VERSION).zip && unzip odin.zip
 
 $(OBJECTS): setup
-	$(shell echo $(platform))
-	$(shell echo $(system_platform))
+	echo $(platform)
+	echo $(system_platform)
 	ls -al $(PATH):$(PWD)/odin-linux-amd64-$(ODIN_VERSION)
 	export PATH=$(PATH):$(PWD)/odin-linux-amd64-$(ODIN_VERSION) && ODIN_TARGET=linux_amd64 $(MAKE) -C $(CORE_DIR) object
 	ls -al
