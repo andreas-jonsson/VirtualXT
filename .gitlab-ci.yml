@@ -101,7 +101,7 @@ libretro-build-linux-x64:
     - .core-defs
 
 # Linux 32-bit
-#libretro-build-linux-i686:
+libretro-build-linux-i686:
   only:
     - develop
     - edge
