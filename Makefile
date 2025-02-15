@@ -44,20 +44,20 @@ gdbstub:
 	$(MAKE) -C src/modules/gdb
 
 debug: gdbstub
-	$(ODIN_BUILD) $(LIB_NAME_PARAM) -build-mode:$(BUILD_MODE) -define:VXT_GDBSTUB=true -debug
+	$(ODIN_BUILD) $(LIB_NAME_PARAM) -build-mode:$(BUILD_MODE) -define:VXT_GDBSTUB=true -debug $(ODIN_FLAGS)
 
 release:
-	$(ODIN_BUILD) $(LIB_NAME_PARAM) -build-mode:$(BUILD_MODE) -o:speed
+	$(ODIN_BUILD) $(LIB_NAME_PARAM) -build-mode:$(BUILD_MODE) -o:speed $(ODIN_FLAGS)
 
 rasberrypi:
-	$(ODIN_BUILD) -out:tools/circle/kernel/core.o -build-mode:object -target:freestanding_arm64 -define:VXT_EXTERNAL_HEAP=true -o:speed
+	$(ODIN_BUILD) -out:tools/circle/kernel/core.o -build-mode:object -target:freestanding_arm64 -define:VXT_EXTERNAL_HEAP=true -o:speed $(ODIN_FLAGS)
 	$(MAKE) -C tools/circle/kernel
 
 object:
 	$(ODIN_BUILD) -out:$(LIB_NAME).o -build-mode:object $(TARGET_PARAM) -o:speed $(ODIN_FLAGS)
 
 wasm:
-	$(ODIN_BUILD) -out:$(LIB_NAME).wasm -build-mode:shared -target:freestanding_wasm32 -o:speed
+	$(ODIN_BUILD) -out:$(LIB_NAME).wasm -build-mode:shared -target:freestanding_wasm32 -o:speed $(ODIN_FLAGS)
 
 run: release
 	retroarch -v -L $(LIB_NAME).$(LIB_EXT)

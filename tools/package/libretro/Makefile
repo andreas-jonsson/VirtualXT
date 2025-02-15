@@ -93,12 +93,11 @@ else ifneq (,$(findstring osx,$(platform)))
 		TARGET_PLATFORM = $(LIBRETRO_APPLE_PLATFORM)
    endif
 
+   ODIN_FLAGS += -minimum-os-version:13.0
    ifneq (,$(findstring arm,$(TARGET_PLATFORM)))
 		ODIN_TARGET = darwin_arm64
    else
-		# TODO: Fix this! Issue with OS version?
-		#ODIN_TARGET = darwin_amd64
-		ODIN_TARGET = freestanding_amd64_sysv
+		ODIN_TARGET = darwin_amd64
    endif
 else ifneq (,$(findstring ios,$(platform)))
    EXT ?= dylib
@@ -106,15 +105,18 @@ else ifneq (,$(findstring ios,$(platform)))
    fpic := -fPIC
    SHARED := -dynamiclib
    MIN_VERSION := -miphoneos-version-min=5.0
+   ODIN_FLAGS += -subtarget:ios
 
    ifeq ($(platform),$(filter $(platform),ios9 ios-arm64))
       MIN_VERSION = -miphoneos-version-min=8.0
+      ODIN_FLAGS += -minimum-os-version:8.0
+   else
+      ODIN_FLAGS += -minimum-os-version:5.0
    endif
    ifeq ($(IOSSDK),)
       IOSSDK := $(shell xcodebuild -version -sdk iphoneos Path)
    endif
 
-   ODIN_FLAGS += -subtarget:ios -minimum-os-version:$(MIN_VERSION)
    ifeq ($(platform),ios-arm64)
       SHARED += -arch arm64 $(MIN_VERSION) -isysroot $(IOSSDK)
       CC = cc -arch arm64 $(MIN_VERSION) -isysroot $(IOSSDK)
